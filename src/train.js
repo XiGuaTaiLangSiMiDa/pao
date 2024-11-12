@@ -2,7 +2,7 @@ import * as tf from '@tensorflow/tfjs-node';
 import { fetchKlines, prepareTrainingData } from './utils/dataFetcher.js';
 
 const LOOKBACK_WINDOW = 20;  // 使用过去20个15分钟K线数据点
-const FEATURE_SIZE = 12;     // 8个基础特征 + 3个波动率特征 + 1个布林带特征
+const FEATURE_SIZE = 12;     // 7个波动率特征 + 4个布林带特征 + 1个成交量特征
 const BATCH_SIZE = 32;
 const EPOCHS = 50;
 
@@ -11,33 +11,37 @@ async function createModel() {
   
   // 第一个LSTM层，返回序列
   model.add(tf.layers.lstm({
-    units: 100,
+    units: 128,
     returnSequences: true,
-    inputShape: [LOOKBACK_WINDOW, FEATURE_SIZE]
+    inputShape: [LOOKBACK_WINDOW, FEATURE_SIZE],
+    recurrentRegularizer: tf.regularizers.l2({ l2: 1e-5 })
   }));
   
   model.add(tf.layers.dropout(0.2));
   
   // 第二个LSTM层
   model.add(tf.layers.lstm({
-    units: 50,
-    returnSequences: true
+    units: 64,
+    returnSequences: true,
+    recurrentRegularizer: tf.regularizers.l2({ l2: 1e-5 })
   }));
   
   model.add(tf.layers.dropout(0.2));
   
   // 第三个LSTM层
   model.add(tf.layers.lstm({
-    units: 30,
-    returnSequences: false
+    units: 32,
+    returnSequences: false,
+    recurrentRegularizer: tf.regularizers.l2({ l2: 1e-5 })
   }));
   
   model.add(tf.layers.dropout(0.2));
   
   // 全连接层
   model.add(tf.layers.dense({
-    units: 20,
-    activation: 'relu'
+    units: 32,
+    activation: 'relu',
+    kernelRegularizer: tf.regularizers.l2({ l2: 1e-5 })
   }));
   
   // 输出层

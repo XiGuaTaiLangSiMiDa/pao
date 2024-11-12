@@ -44,23 +44,40 @@ export async function fetchKlines({
   }
 }
 
-// 计算波动率指标
+// 计算价格波动率指标
 function calculateVolatilityMetrics(kline) {
   const { high, low, open, close } = kline;
+  const avgPrice = (high + low + open + close) / 4;
   
-  // 高低波动率
-  const highLowVolatility = ((high - low) / low) * 100;
+  // 高低价波动率
+  const highLowVolatility = (high - low) / avgPrice * 100;
   
   // 开盘收盘波动率
-  const openCloseVolatility = Math.abs((close - open) / open) * 100;
+  const openCloseVolatility = Math.abs(close - open) / avgPrice * 100;
   
-  // 蜡烛实体比例
-  const bodyToWickRatio = Math.abs(close - open) / (high - low);
+  // 上影线波动率
+  const upperShadowVolatility = (high - Math.max(open, close)) / avgPrice * 100;
+  
+  // 下影线波动率
+  const lowerShadowVolatility = (Math.min(open, close) - low) / avgPrice * 100;
+  
+  // 实体与影线比例
+  const bodyToShadowRatio = Math.abs(close - open) / (high - low);
+  
+  // 开盘价相对高低点位置
+  const openPositionInRange = (open - low) / (high - low);
+  
+  // 收盘价相对高低点位置
+  const closePositionInRange = (close - low) / (high - low);
   
   return {
     highLowVolatility,
     openCloseVolatility,
-    bodyToWickRatio
+    upperShadowVolatility,
+    lowerShadowVolatility,
+    bodyToShadowRatio,
+    openPositionInRange,
+    closePositionInRange
   };
 }
 
@@ -70,11 +87,26 @@ function calculateBollingerBands(prices, period = 20, stdDev = 2) {
   const variance = prices.reduce((a, b) => a + Math.pow(b - sma, 2), 0) / period;
   const std = Math.sqrt(variance);
   
+  const upper = sma + (stdDev * std);
+  const lower = sma - (stdDev * std);
+  const width = (upper - lower) / sma * 100;
+  
+  const currentPrice = prices[prices.length - 1];
+  
+  // 当前价格距离上轨的距离占带宽的百分比
+  const upperBandDistance = ((upper - currentPrice) / (upper - lower)) * 100;
+  
+  // 当前价格距离下轨的距离占带宽的百分比
+  const lowerBandDistance = ((currentPrice - lower) / (upper - lower)) * 100;
+  
+  // 当前价格距离中轨的距离相对于价格的百分比
+  const middleBandDeviation = ((currentPrice - sma) / currentPrice) * 100;
+  
   return {
-    middle: sma,
-    upper: sma + (stdDev * std),
-    lower: sma - (stdDev * std),
-    width: ((sma + (stdDev * std)) - (sma - (stdDev * std))) / sma * 100
+    width,
+    upperBandDistance,
+    lowerBandDistance,
+    middleBandDeviation
   };
 }
 
@@ -113,18 +145,23 @@ export function prepareTrainingData(klines, lookback = 20) {
       
       // 组合所有特征
       const timeStepFeatures = [
-        kline.open,
-        kline.high,
-        kline.low,
-        kline.close,
-        kline.volume,
-        kline.quoteVolume,
-        kline.takerBuyBaseVolume,
-        kline.takerBuyQuoteVolume,
+        // 波动率特征
         volatility.highLowVolatility,
         volatility.openCloseVolatility,
-        volatility.bodyToWickRatio,
-        bb.width
+        volatility.upperShadowVolatility,
+        volatility.lowerShadowVolatility,
+        volatility.bodyToShadowRatio,
+        volatility.openPositionInRange,
+        volatility.closePositionInRange,
+        
+        // 布林带特征
+        bb.width,
+        bb.upperBandDistance,
+        bb.lowerBandDistance,
+        bb.middleBandDeviation,
+        
+        // 成交量特征
+        Math.log(kline.volume) // 使用对数成交量减小量级差异
       ];
       
       windowFeatures.push(timeStepFeatures);
