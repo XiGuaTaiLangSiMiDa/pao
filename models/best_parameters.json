@@ -1,0 +1,57 @@
+{
+  "parameters": {
+    "batchSize": 32,
+    "learningRate": 0.0005,
+    "lstmUnits": [
+      128,
+      64
+    ],
+    "dropoutRate": 0.4,
+    "l2Regularization": 0.0001
+  },
+  "score": 0.015831728116700985,
+  "hyperparameters": {
+    "lookbackWindow": 20,
+    "featureSize": 16,
+    "epochs": 200,
+    "validationSplit": 0.2,
+    "patience": 15,
+    "searchSpace": {
+      "batchSize": [
+        32,
+        64,
+        128
+      ],
+      "learningRate": [
+        0.001,
+        0.0005,
+        0.0001
+      ],
+      "lstmUnits": [
+        [
+          32,
+          16
+        ],
+        [
+          64,
+          32
+        ],
+        [
+          128,
+          64
+        ]
+      ],
+      "dropoutRate": [
+        0.2,
+        0.3,
+        0.4
+      ],
+      "l2Regularization": [
+        0.0001,
+        0.001,
+        0.01
+      ]
+    }
+  },
+  "timestamp": "2024-11-12T08:45:41.680Z"
+}
