@@ -1164,5 +1164,215 @@
       "totalPredictions": 296
     },
     "timestamp": "2024-11-12T09:07:09.588Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0001,
+      "lstmUnits": [
+        32,
+        16
+      ],
+      "dropoutRate": 0.3,
+      "l2Regularization": 0.0001
+    },
+    "score": 0.02556395017186496,
+    "evaluation": {
+      "mse": 0.009197683790244668,
+      "mae": 0.07294958885255698,
+      "directionalAccuracy": 100,
+      "validPredictions": 296,
+      "totalPredictions": 296
+    },
+    "timestamp": "2024-11-12T09:14:05.111Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0001,
+      "lstmUnits": [
+        32,
+        16
+      ],
+      "dropoutRate": 0.3,
+      "l2Regularization": 0.001
+    },
+    "score": 0.041088018094658965,
+    "evaluation": {
+      "mse": 0.019050925898318635,
+      "mae": 0.11155882578443836,
+      "directionalAccuracy": 100,
+      "validPredictions": 296,
+      "totalPredictions": 296
+    },
+    "timestamp": "2024-11-12T09:18:46.553Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0001,
+      "lstmUnits": [
+        32,
+        16
+      ],
+      "dropoutRate": 0.3,
+      "l2Regularization": 0.01
+    },
+    "score": 0.04262669669403218,
+    "evaluation": {
+      "mse": 0.02003117148561558,
+      "mae": 0.11538076033261982,
+      "directionalAccuracy": 100,
+      "validPredictions": 296,
+      "totalPredictions": 296
+    },
+    "timestamp": "2024-11-12T09:20:58.670Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0001,
+      "lstmUnits": [
+        32,
+        16
+      ],
+      "dropoutRate": 0.4,
+      "l2Regularization": 0.0001
+    },
+    "score": 0.02779497917560563,
+    "evaluation": {
+      "mse": 0.010533854265175115,
+      "mae": 0.07860479156511861,
+      "directionalAccuracy": 100,
+      "validPredictions": 296,
+      "totalPredictions": 296
+    },
+    "timestamp": "2024-11-12T09:24:20.022Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0001,
+      "lstmUnits": [
+        32,
+        16
+      ],
+      "dropoutRate": 0.4,
+      "l2Regularization": 0.001
+    },
+    "score": 0.05641389491708677,
+    "evaluation": {
+      "mse": 0.030398249374893344,
+      "mae": 0.14751531722376476,
+      "directionalAccuracy": 100,
+      "validPredictions": 296,
+      "totalPredictions": 296
+    },
+    "timestamp": "2024-11-12T09:25:57.732Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0001,
+      "lstmUnits": [
+        32,
+        16
+      ],
+      "dropoutRate": 0.4,
+      "l2Regularization": 0.01
+    },
+    "score": 0.06061119055039883,
+    "evaluation": {
+      "mse": 0.03317468424394889,
+      "mae": 0.1578043895093976,
+      "directionalAccuracy": 100,
+      "validPredictions": 296,
+      "totalPredictions": 296
+    },
+    "timestamp": "2024-11-12T09:28:53.497Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0001,
+      "lstmUnits": [
+        64,
+        32
+      ],
+      "dropoutRate": 0.2,
+      "l2Regularization": 0.0001
+    },
+    "score": 0.048310107895558355,
+    "evaluation": {
+      "mse": 0.024036096967020765,
+      "mae": 0.1289855636958335,
+      "directionalAccuracy": 100,
+      "validPredictions": 296,
+      "totalPredictions": 296
+    },
+    "timestamp": "2024-11-12T09:35:33.110Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0001,
+      "lstmUnits": [
+        64,
+        32
+      ],
+      "dropoutRate": 0.2,
+      "l2Regularization": 0.001
+    },
+    "score": 0.08145634747678698,
+    "evaluation": {
+      "mse": 0.05049739088962644,
+      "mae": 0.20419130373645472,
+      "directionalAccuracy": 100,
+      "validPredictions": 296,
+      "totalPredictions": 296
+    },
+    "timestamp": "2024-11-12T09:37:49.237Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0001,
+      "lstmUnits": [
+        64,
+        32
+      ],
+      "dropoutRate": 0.2,
+      "l2Regularization": 0.01
+    },
+    "score": 0.058578927596746724,
+    "evaluation": {
+      "mse": 0.031029915080349527,
+      "mae": 0.15388987188202305,
+      "directionalAccuracy": 100,
+      "validPredictions": 296,
+      "totalPredictions": 296
+    },
+    "timestamp": "2024-11-12T09:42:43.676Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0001,
+      "lstmUnits": [
+        64,
+        32
+      ],
+      "dropoutRate": 0.3,
+      "l2Regularization": 0.0001
+    },
+    "score": 0.06028924711713192,
+    "evaluation": {
+      "mse": 0.032979468247678966,
+      "mae": 0.15699153272686778,
+      "directionalAccuracy": 100,
+      "validPredictions": 296,
+      "totalPredictions": 296
+    },
+    "timestamp": "2024-11-12T09:47:43.511Z"
   }
 ]
