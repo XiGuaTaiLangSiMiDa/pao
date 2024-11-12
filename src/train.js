@@ -1,135 +1,329 @@
 import * as tf from '@tensorflow/tfjs-node';
 import { fetchKlines, prepareTrainingData } from './utils/dataFetcher.js';
+import { HYPERPARAMETERS } from './hyperparameters.js';
+import fs from 'fs';
 
-const LOOKBACK_WINDOW = 20;  // 使用过去20个15分钟K线数据点
-const FEATURE_SIZE = 12;     // 7个波动率特征 + 4个布林带特征 + 1个成交量特征
-const BATCH_SIZE = 32;
-const EPOCHS = 50;
+// Custom callback class for early stopping with best weights restoration
+class CustomEarlyStopping extends tf.Callback {
+  constructor() {
+    super();
+    this.bestValLoss = Infinity;
+    this.patience = HYPERPARAMETERS.patience;
+    this.wait = 0;
+    this.bestWeights = null;
+  }
 
-async function createModel() {
+  async onEpochEnd(epoch, logs) {
+    const currentValLoss = logs.val_loss;
+
+    console.log(`\nEpoch ${epoch + 1} of ${HYPERPARAMETERS.epochs}`);
+    console.log(`Loss: ${logs.loss.toFixed(4)}, Val Loss: ${currentValLoss.toFixed(4)}`);
+    
+    if (currentValLoss < this.bestValLoss) {
+      console.log(`Val loss improved from ${this.bestValLoss.toFixed(4)} to ${currentValLoss.toFixed(4)}`);
+      this.bestValLoss = currentValLoss;
+      this.wait = 0;
+      // Save current weights
+      this.bestWeights = this.model.getWeights().map(w => w.clone());
+    } else {
+      this.wait++;
+      console.log(`Val loss did not improve. Patience: ${this.wait}/${this.patience}`);
+      
+      if (this.wait >= this.patience) {
+        this.model.stopTraining = true;
+        console.log('Early stopping triggered');
+        // Restore best weights
+        if (this.bestWeights !== null) {
+          console.log('Restoring best weights...');
+          this.model.setWeights(this.bestWeights);
+        }
+      }
+    }
+  }
+
+  onTrainEnd() {
+    // Clean up cloned weights
+    if (this.bestWeights) {
+      this.bestWeights.forEach(w => w.dispose());
+    }
+  }
+}
+
+function createModel(params) {
   const model = tf.sequential();
   
-  // 第一个LSTM层，返回序列
+  // First LSTM layer
   model.add(tf.layers.lstm({
-    units: 128,
+    units: params.lstmUnits[0],
     returnSequences: true,
-    inputShape: [LOOKBACK_WINDOW, FEATURE_SIZE],
-    recurrentRegularizer: tf.regularizers.l2({ l2: 1e-5 })
+    inputShape: [HYPERPARAMETERS.lookbackWindow, HYPERPARAMETERS.featureSize],
+    recurrentRegularizer: tf.regularizers.l2({ l2: params.l2Regularization }),
+    kernelRegularizer: tf.regularizers.l2({ l2: params.l2Regularization }),
+    recurrentInitializer: 'glorotNormal',
+    kernelInitializer: 'glorotNormal'
   }));
   
-  model.add(tf.layers.dropout(0.2));
+  model.add(tf.layers.batchNormalization());
+  model.add(tf.layers.dropout(params.dropoutRate));
   
-  // 第二个LSTM层
+  // Second LSTM layer
   model.add(tf.layers.lstm({
-    units: 64,
-    returnSequences: true,
-    recurrentRegularizer: tf.regularizers.l2({ l2: 1e-5 })
-  }));
-  
-  model.add(tf.layers.dropout(0.2));
-  
-  // 第三个LSTM层
-  model.add(tf.layers.lstm({
-    units: 32,
+    units: params.lstmUnits[1],
     returnSequences: false,
-    recurrentRegularizer: tf.regularizers.l2({ l2: 1e-5 })
+    recurrentRegularizer: tf.regularizers.l2({ l2: params.l2Regularization }),
+    kernelRegularizer: tf.regularizers.l2({ l2: params.l2Regularization }),
+    recurrentInitializer: 'glorotNormal',
+    kernelInitializer: 'glorotNormal'
   }));
   
-  model.add(tf.layers.dropout(0.2));
+  model.add(tf.layers.batchNormalization());
+  model.add(tf.layers.dropout(params.dropoutRate));
   
-  // 全连接层
+  // Dense layer
   model.add(tf.layers.dense({
-    units: 32,
+    units: 8,
     activation: 'relu',
-    kernelRegularizer: tf.regularizers.l2({ l2: 1e-5 })
+    kernelRegularizer: tf.regularizers.l2({ l2: params.l2Regularization }),
+    kernelInitializer: 'glorotNormal'
   }));
   
-  // 输出层
+  // Output layer
   model.add(tf.layers.dense({
     units: 1,
-    activation: 'linear'  // 预测价格变化百分比
+    activation: 'linear',
+    kernelInitializer: 'glorotNormal'
   }));
 
-  // 使用Adam优化器和均方误差损失函数
+  // Use Adam optimizer with gradient clipping
+  const optimizer = tf.train.adam(params.learningRate, 0.9, 0.999, 1e-7);
+  optimizer.clipNorm = 0.5;
+
   model.compile({
-    optimizer: tf.train.adam(0.001),
+    optimizer: optimizer,
     loss: 'meanSquaredError',
-    metrics: ['mse']
+    metrics: ['mse', 'mae']
   });
 
   return model;
 }
 
+async function evaluateModel(model, xTest, yTest) {
+  try {
+    console.log('\nStarting model evaluation...');
+    
+    // Evaluate model
+    console.log('Running model.evaluate()...');
+    const evaluation = await model.evaluate(xTest, yTest);
+    
+    // Make predictions
+    console.log('Running model predictions...');
+    const predictions = model.predict(xTest);
+    
+    // Get values safely with error checking
+    console.log('Converting tensors to arrays...');
+    const predArray = await predictions.array();
+    const actualArray = await yTest.array();
+    
+    // Calculate metrics
+    console.log('Calculating evaluation metrics...');
+    let validPredictions = 0;
+    let correctDirection = 0;
+    let sumSquaredError = 0;
+    let sumAbsoluteError = 0;
+    let validCount = 0;
+    
+    for (let i = 0; i < predArray.length; i++) {
+      const pred = predArray[i][0];
+      const actual = actualArray[i];
+      
+      if (!isNaN(pred) && !isNaN(actual) && isFinite(pred) && isFinite(actual)) {
+        validCount++;
+        sumSquaredError += Math.pow(pred - actual, 2);
+        sumAbsoluteError += Math.abs(pred - actual);
+        
+        if ((pred > 0 && actual > 0) || (pred < 0 && actual < 0)) {
+          correctDirection++;
+        }
+        validPredictions++;
+      }
+    }
+    
+    // Calculate final metrics
+    const mse = validCount > 0 ? sumSquaredError / validCount : NaN;
+    const mae = validCount > 0 ? sumAbsoluteError / validCount : NaN;
+    const directionalAccuracy = validPredictions > 0 ? 
+      (correctDirection / validPredictions) * 100 : 0;
+    
+    // Print results
+    console.log('\nModel Evaluation Results:');
+    console.log('MSE:', mse.toFixed(4));
+    console.log('MAE:', mae.toFixed(4));
+    console.log('Directional Accuracy:', directionalAccuracy.toFixed(2) + '%');
+    console.log('Valid Predictions:', validPredictions, 'out of', predArray.length);
+    
+    // Sample predictions
+    console.log('\nSample Predictions vs Actuals:');
+    for (let i = 0; i < Math.min(5, predArray.length); i++) {
+      console.log(`Prediction: ${predArray[i][0].toFixed(4)}, Actual: ${actualArray[i].toFixed(4)}`);
+    }
+    
+    // Clean up tensors
+    predictions.dispose();
+    evaluation.forEach(tensor => tensor.dispose());
+    
+    return {
+      mse,
+      mae,
+      directionalAccuracy,
+      validPredictions,
+      totalPredictions: predArray.length
+    };
+  } catch (error) {
+    console.error('Error during evaluation:', error);
+    console.error('Error stack:', error.stack);
+    return null;
+  }
+}
+
+async function trainWithParams(params, xTrain, yTrain, xTest, yTest) {
+  console.log('\nTraining with parameters:', params);
+  
+  const model = createModel(params);
+  model.summary();
+
+  const history = await model.fit(xTrain, yTrain, {
+    batchSize: params.batchSize,
+    epochs: HYPERPARAMETERS.epochs,
+    validationSplit: HYPERPARAMETERS.validationSplit,
+    shuffle: true,
+    verbose: 1,
+    callbacks: [new CustomEarlyStopping()]
+  });
+
+  const evaluation = await evaluateModel(model, xTest, yTest);
+  
+  return {
+    model,
+    evaluation,
+    finalValLoss: history.history.val_loss[history.history.val_loss.length - 1]
+  };
+}
+
+async function gridSearch(xTrain, yTrain, xTest, yTest) {
+  const { searchSpace } = HYPERPARAMETERS;
+  let bestParams = null;
+  let bestModel = null;
+  let bestScore = Infinity;
+  let allResults = [];
+
+  // Generate all combinations of hyperparameters
+  for (const batchSize of searchSpace.batchSize) {
+    for (const learningRate of searchSpace.learningRate) {
+      for (const lstmUnits of searchSpace.lstmUnits) {
+        for (const dropoutRate of searchSpace.dropoutRate) {
+          for (const l2Regularization of searchSpace.l2Regularization) {
+            const params = {
+              batchSize,
+              learningRate,
+              lstmUnits,
+              dropoutRate,
+              l2Regularization
+            };
+
+            console.log('\nTrying parameters:', params);
+            
+            const result = await trainWithParams(params, xTrain, yTrain, xTest, yTest);
+            
+            // Calculate combined score (weighted average of metrics)
+            const score = result.evaluation ? 
+              (0.4 * result.evaluation.mse + 
+               0.3 * result.evaluation.mae + 
+               0.3 * (100 - result.evaluation.directionalAccuracy)) : Infinity;
+
+            allResults.push({
+              params,
+              score,
+              evaluation: result.evaluation
+            });
+
+            if (score < bestScore) {
+              console.log('\nNew best score:', score);
+              bestScore = score;
+              bestParams = params;
+              bestModel = result.model;
+            }
+
+            // Save intermediate results
+            fs.writeFileSync(
+              'models/hyperparameter_search_results.json',
+              JSON.stringify(allResults, null, 2)
+            );
+          }
+        }
+      }
+    }
+  }
+
+  return { bestParams, bestModel, bestScore, allResults };
+}
+
 async function trainModel() {
   try {
     console.log('Fetching historical data...');
-    // 获取足够多的历史数据用于训练
     const klines = await fetchKlines({
       interval: '15m',
-      limit: 1500  // 获取最近1500根K线
+      limit: 1500
     });
 
     console.log('Preparing training data...');
-    const { features, labels } = prepareTrainingData(klines, LOOKBACK_WINDOW);
+    const { features, labels } = prepareTrainingData(klines, HYPERPARAMETERS.lookbackWindow);
 
-    // 检查特征形状
-    console.log('Feature shape:', [features.length, features[0].length, features[0][0].length]);
-    console.log('Expected shape:', [null, LOOKBACK_WINDOW, FEATURE_SIZE]);
+    // Create tensors with proper shapes
+    const featuresTensor = tf.tensor3d(features);
+    const labelsTensor = tf.tensor1d(labels);
 
-    // 转换为张量
-    const xTrain = tf.tensor3d(features);
-    const yTrain = tf.tensor2d(labels, [labels.length, 1]);
+    // Split data into training and testing sets
+    const splitIndex = Math.floor(features.length * 0.8);
+    const xTrain = featuresTensor.slice([0, 0, 0], [splitIndex, -1, -1]);
+    const yTrain = labelsTensor.slice(0, splitIndex);
+    const xTest = featuresTensor.slice([splitIndex, 0, 0], [-1, -1, -1]);
+    const yTest = labelsTensor.slice(splitIndex);
 
-    // 创建和训练模型
-    console.log('Creating model...');
-    const model = await createModel();
+    console.log('Starting hyperparameter search...');
+    const { bestParams, bestModel, bestScore, allResults } = await gridSearch(xTrain, yTrain, xTest, yTest);
 
-    // 输出模型结构
-    model.summary();
+    // Save best model and parameters
+    console.log('\nSaving best model and parameters...');
+    await bestModel.save('file://./models/best_model');
+    
+    fs.writeFileSync(
+      'models/best_parameters.json',
+      JSON.stringify({
+        parameters: bestParams,
+        score: bestScore,
+        hyperparameters: HYPERPARAMETERS,
+        timestamp: new Date().toISOString()
+      }, null, 2)
+    );
 
-    console.log('Training model...');
-    await model.fit(xTrain, yTrain, {
-      batchSize: BATCH_SIZE,
-      epochs: EPOCHS,
-      validationSplit: 0.2,
-      shuffle: true,
-      callbacks: {
-        onEpochEnd: (epoch, logs) => {
-          console.log(`Epoch ${epoch + 1} of ${EPOCHS}`);
-          console.log(`Loss: ${logs.loss.toFixed(4)}, Val Loss: ${logs.val_loss.toFixed(4)}`);
-        }
-      }
-    });
-
-    // 保存模型
-    console.log('Saving model...');
-    await model.save('file://./models/sol_predictor');
-
-    // 清理内存
+    // Clean up
+    featuresTensor.dispose();
+    labelsTensor.dispose();
     xTrain.dispose();
     yTrain.dispose();
+    xTest.dispose();
+    yTest.dispose();
     
-    console.log('Training completed successfully!');
-    
-    // 进行一些测试预测
-    const testData = features.slice(-5);
-    const testTensor = tf.tensor3d(testData);
-    const predictions = model.predict(testTensor);
-    const predictionValues = await predictions.array();
-    
-    console.log('\nSample Predictions (Expected price change % in next 1h):');
-    predictionValues.forEach((pred, i) => {
-      console.log(`Prediction ${i + 1}: ${pred[0].toFixed(2)}%`);
-    });
-    
-    testTensor.dispose();
-    predictions.dispose();
+    console.log('\nTraining completed successfully!');
+    console.log('Best parameters:', bestParams);
+    console.log('Best score:', bestScore);
 
   } catch (error) {
     console.error('Error during training:', error);
+    console.error('Error stack:', error.stack);
     if (error.message.includes('tensor')) {
       console.error('Tensor shape error. Please check the input data format.');
-      console.error('Expected shape:', [null, LOOKBACK_WINDOW, FEATURE_SIZE]);
+      console.error('Expected shape:', [null, HYPERPARAMETERS.lookbackWindow, HYPERPARAMETERS.featureSize]);
     }
   }
 }

@@ -3,6 +3,21 @@ import moment from 'moment';
 
 const BINANCE_API_BASE = 'https://fapi.binance.com/fapi/v1';
 
+// Data validation function
+function validateKlineData(kline) {
+  const requiredFields = ['openTime', 'open', 'high', 'low', 'close', 'volume'];
+  const isValid = requiredFields.every(field => {
+    const value = kline[field];
+    return value !== undefined && value !== null && !isNaN(value);
+  });
+  
+  if (!isValid) {
+    throw new Error('Invalid kline data: Missing or invalid required fields');
+  }
+  
+  return true;
+}
+
 export async function fetchKlines({
   symbol = 'SOLUSDT',
   interval = '15m',
@@ -25,7 +40,20 @@ export async function fetchKlines({
     }
 
     const response = await axios.get(`${BINANCE_API_BASE}/klines`, { params });
-    return response.data.map(kline => ({
+    
+    // Add retry logic for API failures
+    let retries = 3;
+    while (retries > 0 && !response.data) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      response = await axios.get(`${BINANCE_API_BASE}/klines`, { params });
+      retries--;
+    }
+
+    if (!response.data) {
+      throw new Error('Failed to fetch kline data after retries');
+    }
+
+    const klines = response.data.map(kline => ({
       openTime: kline[0],
       open: parseFloat(kline[1]),
       high: parseFloat(kline[2]),
@@ -38,10 +66,55 @@ export async function fetchKlines({
       takerBuyBaseVolume: parseFloat(kline[9]),
       takerBuyQuoteVolume: parseFloat(kline[10])
     }));
+
+    // Validate each kline
+    klines.forEach(validateKlineData);
+
+    return klines;
   } catch (error) {
     console.error('Error fetching klines:', error.message);
     throw error;
   }
+}
+
+// Calculate RSI
+function calculateRSI(prices, period = 14) {
+  const changes = prices.slice(1).map((price, i) => price - prices[i]);
+  const gains = changes.map(change => change > 0 ? change : 0);
+  const losses = changes.map(change => change < 0 ? -change : 0);
+
+  let avgGain = gains.slice(0, period).reduce((a, b) => a + b) / period;
+  let avgLoss = losses.slice(0, period).reduce((a, b) => a + b) / period;
+
+  const rsiValues = [100 - (100 / (1 + avgGain / avgLoss))];
+
+  for (let i = period; i < changes.length; i++) {
+    avgGain = (avgGain * (period - 1) + gains[i]) / period;
+    avgLoss = (avgLoss * (period - 1) + losses[i]) / period;
+    rsiValues.push(100 - (100 / (1 + avgGain / avgLoss)));
+  }
+
+  return rsiValues;
+}
+
+// Calculate MACD
+function calculateMACD(prices, fastPeriod = 12, slowPeriod = 26, signalPeriod = 9) {
+  const ema = (values, period) => {
+    const k = 2 / (period + 1);
+    const emaValues = [values[0]];
+    for (let i = 1; i < values.length; i++) {
+      emaValues.push(values[i] * k + emaValues[i - 1] * (1 - k));
+    }
+    return emaValues;
+  };
+
+  const fastEMA = ema(prices, fastPeriod);
+  const slowEMA = ema(prices, slowPeriod);
+  const macdLine = fastEMA.map((fast, i) => fast - slowEMA[i]);
+  const signalLine = ema(macdLine, signalPeriod);
+  const histogram = macdLine.map((macd, i) => macd - signalLine[i]);
+
+  return { macdLine, signalLine, histogram };
 }
 
 // 计算价格波动率指标
@@ -49,25 +122,12 @@ function calculateVolatilityMetrics(kline) {
   const { high, low, open, close } = kline;
   const avgPrice = (high + low + open + close) / 4;
   
-  // 高低价波动率
   const highLowVolatility = (high - low) / avgPrice * 100;
-  
-  // 开盘收盘波动率
   const openCloseVolatility = Math.abs(close - open) / avgPrice * 100;
-  
-  // 上影线波动率
   const upperShadowVolatility = (high - Math.max(open, close)) / avgPrice * 100;
-  
-  // 下影线波动率
   const lowerShadowVolatility = (Math.min(open, close) - low) / avgPrice * 100;
-  
-  // 实体与影线比例
   const bodyToShadowRatio = Math.abs(close - open) / (high - low);
-  
-  // 开盘价相对高低点位置
   const openPositionInRange = (open - low) / (high - low);
-  
-  // 收盘价相对高低点位置
   const closePositionInRange = (close - low) / (high - low);
   
   return {
@@ -92,26 +152,43 @@ function calculateBollingerBands(prices, period = 20, stdDev = 2) {
   const width = (upper - lower) / sma * 100;
   
   const currentPrice = prices[prices.length - 1];
-  
-  // 当前价格距离上轨的距离占带宽的百分比
   const upperBandDistance = ((upper - currentPrice) / (upper - lower)) * 100;
-  
-  // 当前价格距离下轨的距离占带宽的百分比
   const lowerBandDistance = ((currentPrice - lower) / (upper - lower)) * 100;
-  
-  // 当前价格距离中轨的距离相对于价格的百分比
   const middleBandDeviation = ((currentPrice - sma) / currentPrice) * 100;
   
   return {
     width,
     upperBandDistance,
     lowerBandDistance,
-    middleBandDeviation
+    middleBandDeviation,
+    sma
   };
 }
 
-// 计算未来1小时的价格变化百分比
-export function calculateFutureReturns(klines, futureSteps = 4) { // 4个15分钟 = 1小时
+// Calculate ATR (Average True Range)
+function calculateATR(klines, period = 14) {
+  const trueRanges = klines.map((kline, i) => {
+    if (i === 0) return kline.high - kline.low;
+    const previousClose = klines[i - 1].close;
+    return Math.max(
+      kline.high - kline.low,
+      Math.abs(kline.high - previousClose),
+      Math.abs(kline.low - previousClose)
+    );
+  });
+
+  let atr = trueRanges.slice(0, period).reduce((a, b) => a + b) / period;
+  const atrValues = [atr];
+
+  for (let i = period; i < trueRanges.length; i++) {
+    atr = ((atr * (period - 1)) + trueRanges[i]) / period;
+    atrValues.push(atr);
+  }
+
+  return atrValues;
+}
+
+export function calculateFutureReturns(klines, futureSteps = 4) {
   const returns = [];
   
   for (let i = 0; i < klines.length - futureSteps; i++) {
@@ -124,44 +201,52 @@ export function calculateFutureReturns(klines, futureSteps = 4) { // 4个15分�
   return returns;
 }
 
-// 准备训练数据
 export function prepareTrainingData(klines, lookback = 20) {
+  if (klines.length < lookback + 4) {
+    throw new Error('Insufficient data points for feature extraction');
+  }
+
   const features = [];
   const returns = calculateFutureReturns(klines);
+  const closePrices = klines.map(k => k.close);
+  
+  // Calculate indicators that need the full price history
+  const rsi = calculateRSI(closePrices);
+  const macd = calculateMACD(closePrices);
+  const atr = calculateATR(klines);
   
   for (let i = lookback; i < klines.length - 4; i++) {
     const window = klines.slice(i - lookback, i);
     const windowFeatures = [];
     
-    // 为每个时间步提取特征
     for (let j = 0; j < window.length; j++) {
       const kline = window[j];
       const volatility = calculateVolatilityMetrics(kline);
       
-      // 计算布林带 (使用前20个收盘价)
       const priceWindow = klines.slice(Math.max(0, i - lookback + j - 19), i - lookback + j + 1)
         .map(k => k.close);
       const bb = calculateBollingerBands(priceWindow);
       
-      // 组合所有特征
       const timeStepFeatures = [
-        // 波动率特征
+        // Price & Volume
+        kline.close / kline.open - 1, // Normalized price change
+        Math.log(kline.volume), // Log volume
+        
+        // Volatility Metrics
         volatility.highLowVolatility,
         volatility.openCloseVolatility,
-        volatility.upperShadowVolatility,
-        volatility.lowerShadowVolatility,
         volatility.bodyToShadowRatio,
-        volatility.openPositionInRange,
-        volatility.closePositionInRange,
         
-        // 布林带特征
-        bb.width,
-        bb.upperBandDistance,
-        bb.lowerBandDistance,
-        bb.middleBandDeviation,
+        // Technical Indicators
+        rsi[i - lookback + j] / 100, // Normalized RSI
+        macd.macdLine[i - lookback + j],
+        macd.histogram[i - lookback + j],
+        bb.width / 100, // Normalized BB width
+        bb.middleBandDeviation / 100,
         
-        // 成交量特征
-        Math.log(kline.volume) // 使用对数成交量减小量级差异
+        // Trend & Momentum
+        atr[i - lookback + j] / kline.close, // Normalized ATR
+        (kline.close - bb.sma) / bb.sma // Price deviation from SMA
       ];
       
       windowFeatures.push(timeStepFeatures);
@@ -170,25 +255,22 @@ export function prepareTrainingData(klines, lookback = 20) {
     features.push(windowFeatures);
   }
 
-  // 标准化特征
+  // Normalize features
   const normalizedFeatures = features.map(window => {
     const transposed = Array(window[0].length).fill().map(() => []);
     
-    // 转置数据以便按特征标准化
     for (let i = 0; i < window.length; i++) {
       for (let j = 0; j < window[i].length; j++) {
         transposed[j].push(window[i][j]);
       }
     }
     
-    // 标准化每个特征
     const normalized = transposed.map(feature => {
       const mean = feature.reduce((a, b) => a + b, 0) / feature.length;
       const std = Math.sqrt(feature.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / feature.length) || 1;
       return feature.map(value => (value - mean) / std);
     });
     
-    // 转置回原始形状
     const result = Array(window.length).fill().map(() => []);
     for (let i = 0; i < normalized.length; i++) {
       for (let j = 0; j < normalized[i].length; j++) {
