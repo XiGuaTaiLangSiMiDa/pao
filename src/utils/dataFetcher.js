@@ -44,6 +44,40 @@ export async function fetchKlines({
   }
 }
 
+// 计算波动率指标
+function calculateVolatilityMetrics(kline) {
+  const { high, low, open, close } = kline;
+  
+  // 高低波动率
+  const highLowVolatility = ((high - low) / low) * 100;
+  
+  // 开盘收盘波动率
+  const openCloseVolatility = Math.abs((close - open) / open) * 100;
+  
+  // 蜡烛实体比例
+  const bodyToWickRatio = Math.abs(close - open) / (high - low);
+  
+  return {
+    highLowVolatility,
+    openCloseVolatility,
+    bodyToWickRatio
+  };
+}
+
+// 计算布林带指标
+function calculateBollingerBands(prices, period = 20, stdDev = 2) {
+  const sma = prices.reduce((a, b) => a + b, 0) / period;
+  const variance = prices.reduce((a, b) => a + Math.pow(b - sma, 2), 0) / period;
+  const std = Math.sqrt(variance);
+  
+  return {
+    middle: sma,
+    upper: sma + (stdDev * std),
+    lower: sma - (stdDev * std),
+    width: ((sma + (stdDev * std)) - (sma - (stdDev * std))) / sma * 100
+  };
+}
+
 // 计算未来1小时的价格变化百分比
 export function calculateFutureReturns(klines, futureSteps = 4) { // 4个15分钟 = 1小时
   const returns = [];
@@ -58,27 +92,6 @@ export function calculateFutureReturns(klines, futureSteps = 4) { // 4个15分�
   return returns;
 }
 
-// 标准化数据
-function normalizeFeatures(features) {
-  const normalized = [];
-  for (let i = 0; i < features.length; i++) {
-    const window = features[i];
-    const normalizedWindow = [];
-    
-    // 对每个特征进行标准化
-    for (let j = 0; j < window.length; j++) {
-      const feature = window[j];
-      const mean = feature.reduce((a, b) => a + b, 0) / feature.length;
-      const std = Math.sqrt(feature.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / feature.length);
-      const normalizedFeature = feature.map(value => (value - mean) / (std || 1));
-      normalizedWindow.push(normalizedFeature);
-    }
-    
-    normalized.push(normalizedWindow);
-  }
-  return normalized;
-}
-
 // 准备训练数据
 export function prepareTrainingData(klines, lookback = 20) {
   const features = [];
@@ -86,37 +99,71 @@ export function prepareTrainingData(klines, lookback = 20) {
   
   for (let i = lookback; i < klines.length - 4; i++) {
     const window = klines.slice(i - lookback, i);
-    const windowFeatures = [
-      window.map(k => k.open),
-      window.map(k => k.high),
-      window.map(k => k.low),
-      window.map(k => k.close),
-      window.map(k => k.volume),
-      window.map(k => k.quoteVolume),
-      window.map(k => k.takerBuyBaseVolume),
-      window.map(k => k.takerBuyQuoteVolume)
-    ];
+    const windowFeatures = [];
+    
+    // 为每个时间步提取特征
+    for (let j = 0; j < window.length; j++) {
+      const kline = window[j];
+      const volatility = calculateVolatilityMetrics(kline);
+      
+      // 计算布林带 (使用前20个收盘价)
+      const priceWindow = klines.slice(Math.max(0, i - lookback + j - 19), i - lookback + j + 1)
+        .map(k => k.close);
+      const bb = calculateBollingerBands(priceWindow);
+      
+      // 组合所有特征
+      const timeStepFeatures = [
+        kline.open,
+        kline.high,
+        kline.low,
+        kline.close,
+        kline.volume,
+        kline.quoteVolume,
+        kline.takerBuyBaseVolume,
+        kline.takerBuyQuoteVolume,
+        volatility.highLowVolatility,
+        volatility.openCloseVolatility,
+        volatility.bodyToWickRatio,
+        bb.width
+      ];
+      
+      windowFeatures.push(timeStepFeatures);
+    }
+    
     features.push(windowFeatures);
   }
-  
+
   // 标准化特征
-  const normalizedFeatures = normalizeFeatures(features);
-  
-  // 转换为正确的形状 [samples, timesteps, features]
-  const reshapedFeatures = normalizedFeatures.map(window => {
-    const timesteps = [];
-    for (let t = 0; t < lookback; t++) {
-      const timestep = [];
-      for (let f = 0; f < 8; f++) {
-        timestep.push(window[f][t]);
+  const normalizedFeatures = features.map(window => {
+    const transposed = Array(window[0].length).fill().map(() => []);
+    
+    // 转置数据以便按特征标准化
+    for (let i = 0; i < window.length; i++) {
+      for (let j = 0; j < window[i].length; j++) {
+        transposed[j].push(window[i][j]);
       }
-      timesteps.push(timestep);
     }
-    return timesteps;
+    
+    // 标准化每个特征
+    const normalized = transposed.map(feature => {
+      const mean = feature.reduce((a, b) => a + b, 0) / feature.length;
+      const std = Math.sqrt(feature.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / feature.length) || 1;
+      return feature.map(value => (value - mean) / std);
+    });
+    
+    // 转置回原始形状
+    const result = Array(window.length).fill().map(() => []);
+    for (let i = 0; i < normalized.length; i++) {
+      for (let j = 0; j < normalized[i].length; j++) {
+        result[j].push(normalized[i][j]);
+      }
+    }
+    
+    return result;
   });
 
   return {
-    features: reshapedFeatures,
+    features: normalizedFeatures,
     labels: returns.slice(lookback)
   };
 }

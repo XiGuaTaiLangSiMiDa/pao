@@ -1,14 +1,38 @@
 # SOL-USDT Price Predictor
 
-This project uses TensorFlow.js to predict SOL-USDT price movements over the next hour based on 15-minute kline data.
+This project uses TensorFlow.js to predict SOL-USDT price movements over the next hour based on 15-minute kline data and advanced technical indicators.
 
 ## Features
 
+### Data Collection
 - Fetches historical SOL-USDT 15m kline data from Binance Futures API
 - Processes and normalizes data for training
-- Uses LSTM neural network for time series prediction
-- Predicts price movement percentage for the next hour
-- Provides trading signals based on prediction strength
+
+### Technical Indicators
+1. Price Data:
+   - Open, High, Low, Close prices
+   - Trading volume
+   - Quote volume
+   - Taker buy volumes
+
+2. Volatility Metrics:
+   - High-Low volatility: ((high - low) / low) * 100
+   - Open-Close volatility: |close - open| / open * 100
+   - Body-to-Wick ratio: |close - open| / (high - low)
+
+3. Bollinger Bands:
+   - Band width as percentage of middle band
+   - 20-period SMA with 2 standard deviations
+
+### Model Architecture
+- Three stacked LSTM layers:
+  * First layer: 100 units with sequence return
+  * Second layer: 50 units with sequence return
+  * Third layer: 30 units
+- Dropout layers (0.2) for regularization
+- Dense layer with ReLU activation (20 units)
+- Output layer for price change prediction
+- Adam optimizer with MSE loss function
 
 ## Setup
 
@@ -27,21 +51,6 @@ npm run train
 npm run predict
 ```
 
-## Project Structure
-
-- `src/train.js` - Model training script
-- `src/predict.js` - Real-time prediction script
-- `src/utils/dataFetcher.js` - Data fetching and processing utilities
-
-## Model Architecture
-
-The model uses a stacked LSTM architecture:
-- Input: 20 timesteps of 15m kline data (5 hours of historical data)
-- Features per timestep: Open, High, Low, Close, Volume, Quote Volume, Taker Buy Base Volume, Taker Buy Quote Volume
-- First LSTM layer: 50 units with return sequences
-- Second LSTM layer: 30 units
-- Output: Single value predicting price change percentage in next hour
-
 ## Trading Signals
 
 The prediction script provides trading signals based on the predicted price movement:
@@ -51,8 +60,17 @@ The prediction script provides trading signals based on the predicted price move
 - Weak Sell: -0.5% to -1.5% predicted decrease
 - Strong Sell: < -1.5% predicted decrease
 
+## Project Structure
+
+- `src/train.js` - Model training script
+- `src/predict.js` - Real-time prediction script
+- `src/utils/dataFetcher.js` - Data fetching and processing utilities
+- `models/` - Directory for saved model files (gitignored)
+
 ## Notes
 
+- The model uses a comprehensive set of technical indicators to capture market dynamics
+- Volatility metrics help identify market conditions and potential trend changes
+- Bollinger Band width indicates market volatility and potential breakouts
 - The model is trained on historical data and its predictions should not be used as the sole basis for trading decisions
-- Market conditions can change rapidly and past performance doesn't guarantee future results
 - Always use proper risk management when trading

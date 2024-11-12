@@ -2,22 +2,31 @@ import * as tf from '@tensorflow/tfjs-node';
 import { fetchKlines, prepareTrainingData } from './utils/dataFetcher.js';
 
 const LOOKBACK_WINDOW = 20;  // 使用过去20个15分钟K线数据点
-const FEATURE_SIZE = 8;      // 每个K线包含8个特征
+const FEATURE_SIZE = 12;     // 8个基础特征 + 3个波动率特征 + 1个布林带特征
 const BATCH_SIZE = 32;
 const EPOCHS = 50;
 
 async function createModel() {
   const model = tf.sequential();
   
-  // 添加LSTM层
+  // 第一个LSTM层，返回序列
   model.add(tf.layers.lstm({
-    units: 50,
+    units: 100,
     returnSequences: true,
     inputShape: [LOOKBACK_WINDOW, FEATURE_SIZE]
   }));
   
   model.add(tf.layers.dropout(0.2));
   
+  // 第二个LSTM层
+  model.add(tf.layers.lstm({
+    units: 50,
+    returnSequences: true
+  }));
+  
+  model.add(tf.layers.dropout(0.2));
+  
+  // 第三个LSTM层
   model.add(tf.layers.lstm({
     units: 30,
     returnSequences: false
@@ -25,12 +34,19 @@ async function createModel() {
   
   model.add(tf.layers.dropout(0.2));
   
+  // 全连接层
+  model.add(tf.layers.dense({
+    units: 20,
+    activation: 'relu'
+  }));
+  
   // 输出层
   model.add(tf.layers.dense({
     units: 1,
     activation: 'linear'  // 预测价格变化百分比
   }));
 
+  // 使用Adam优化器和均方误差损失函数
   model.compile({
     optimizer: tf.train.adam(0.001),
     loss: 'meanSquaredError',
@@ -52,6 +68,10 @@ async function trainModel() {
     console.log('Preparing training data...');
     const { features, labels } = prepareTrainingData(klines, LOOKBACK_WINDOW);
 
+    // 检查特征形状
+    console.log('Feature shape:', [features.length, features[0].length, features[0][0].length]);
+    console.log('Expected shape:', [null, LOOKBACK_WINDOW, FEATURE_SIZE]);
+
     // 转换为张量
     const xTrain = tf.tensor3d(features);
     const yTrain = tf.tensor2d(labels, [labels.length, 1]);
@@ -60,11 +80,15 @@ async function trainModel() {
     console.log('Creating model...');
     const model = await createModel();
 
+    // 输出模型结构
+    model.summary();
+
     console.log('Training model...');
     await model.fit(xTrain, yTrain, {
       batchSize: BATCH_SIZE,
       epochs: EPOCHS,
       validationSplit: 0.2,
+      shuffle: true,
       callbacks: {
         onEpochEnd: (epoch, logs) => {
           console.log(`Epoch ${epoch + 1} of ${EPOCHS}`);
@@ -99,6 +123,10 @@ async function trainModel() {
 
   } catch (error) {
     console.error('Error during training:', error);
+    if (error.message.includes('tensor')) {
+      console.error('Tensor shape error. Please check the input data format.');
+      console.error('Expected shape:', [null, LOOKBACK_WINDOW, FEATURE_SIZE]);
+    }
   }
 }
 
