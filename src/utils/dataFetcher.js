@@ -8,7 +8,7 @@ function validateKlineData(kline) {
   const requiredFields = ['openTime', 'open', 'high', 'low', 'close', 'volume'];
   const isValid = requiredFields.every(field => {
     const value = kline[field];
-    return value !== undefined && value !== null && !isNaN(value);
+    return value !== undefined && value !== null && !isNaN(value) && isFinite(value);
   });
   
   if (!isValid) {
@@ -77,32 +77,62 @@ export async function fetchKlines({
   }
 }
 
-// Calculate RSI
+// Calculate price momentum with safety checks
+function calculateMomentum(prices, period) {
+  return prices.map((price, i) => {
+    if (i < period) return 0;
+    const pastPrice = prices[i - period];
+    if (!isFinite(price) || !isFinite(pastPrice) || pastPrice === 0) return 0;
+    return (price / pastPrice - 1) * 100;
+  });
+}
+
+// Calculate Rate of Change (ROC) with safety checks
+function calculateROC(prices, period) {
+  return prices.map((price, i) => {
+    if (i < period) return 0;
+    const pastPrice = prices[i - period];
+    if (!isFinite(price) || !isFinite(pastPrice) || pastPrice === 0) return 0;
+    return ((price - pastPrice) / pastPrice) * 100;
+  });
+}
+
+// Calculate RSI with safety checks
 function calculateRSI(prices, period = 14) {
-  const changes = prices.slice(1).map((price, i) => price - prices[i]);
+  const changes = prices.slice(1).map((price, i) => {
+    const prevPrice = prices[i];
+    if (!isFinite(price) || !isFinite(prevPrice)) return 0;
+    return price - prevPrice;
+  });
+
   const gains = changes.map(change => change > 0 ? change : 0);
   const losses = changes.map(change => change < 0 ? -change : 0);
 
-  let avgGain = gains.slice(0, period).reduce((a, b) => a + b) / period;
-  let avgLoss = losses.slice(0, period).reduce((a, b) => a + b) / period;
+  let avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
+  let avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
 
-  const rsiValues = [100 - (100 / (1 + avgGain / avgLoss))];
+  const rsiValues = [50]; // Initial value
 
   for (let i = period; i < changes.length; i++) {
     avgGain = (avgGain * (period - 1) + gains[i]) / period;
     avgLoss = (avgLoss * (period - 1) + losses[i]) / period;
-    rsiValues.push(100 - (100 / (1 + avgGain / avgLoss)));
+    const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+    rsiValues.push(100 - (100 / (1 + rs)));
   }
 
   return rsiValues;
 }
 
-// Calculate MACD
+// Calculate MACD with safety checks
 function calculateMACD(prices, fastPeriod = 12, slowPeriod = 26, signalPeriod = 9) {
   const ema = (values, period) => {
     const k = 2 / (period + 1);
     const emaValues = [values[0]];
     for (let i = 1; i < values.length; i++) {
+      if (!isFinite(values[i]) || !isFinite(emaValues[i - 1])) {
+        emaValues.push(emaValues[i - 1] || 0);
+        continue;
+      }
       emaValues.push(values[i] * k + emaValues[i - 1] * (1 - k));
     }
     return emaValues;
@@ -117,88 +147,101 @@ function calculateMACD(prices, fastPeriod = 12, slowPeriod = 26, signalPeriod = 
   return { macdLine, signalLine, histogram };
 }
 
-// 计算价格波动率指标
-function calculateVolatilityMetrics(kline) {
-  const { high, low, open, close } = kline;
-  const avgPrice = (high + low + open + close) / 4;
+// Calculate price patterns with safety checks
+function calculatePricePatterns(kline, prevKline) {
+  if (!prevKline) return null;
+
+  const { open, high, low, close } = kline;
+  const prevClose = prevKline.close;
   
-  const highLowVolatility = (high - low) / avgPrice * 100;
-  const openCloseVolatility = Math.abs(close - open) / avgPrice * 100;
-  const upperShadowVolatility = (high - Math.max(open, close)) / avgPrice * 100;
-  const lowerShadowVolatility = (Math.min(open, close) - low) / avgPrice * 100;
-  const bodyToShadowRatio = Math.abs(close - open) / (high - low);
-  const openPositionInRange = (open - low) / (high - low);
-  const closePositionInRange = (close - low) / (high - low);
+  if (!isFinite(open) || !isFinite(high) || !isFinite(low) || !isFinite(close) || !isFinite(prevClose)) {
+    return null;
+  }
+
+  // Calculate normalized price movements
+  const bodySize = Math.abs(close - open) / (open || 1);
+  const upperShadow = (high - Math.max(open, close)) / (open || 1);
+  const lowerShadow = (Math.min(open, close) - low) / (open || 1);
+  const totalRange = (high - low) / (open || 1);
+  
+  // Calculate price momentum
+  const priceChange = (close - prevClose) / (prevClose || 1);
+  const gapUp = (open - prevClose) / (prevClose || 1);
+  
+  // Calculate volatility patterns
+  const avgPrice = (high + low) / 2;
+  const volatility = avgPrice !== 0 ? (high - low) / avgPrice : 0;
+  const bodyToShadowRatio = totalRange !== 0 ? bodySize / totalRange : 0;
   
   return {
-    highLowVolatility,
-    openCloseVolatility,
-    upperShadowVolatility,
-    lowerShadowVolatility,
-    bodyToShadowRatio,
-    openPositionInRange,
-    closePositionInRange
+    bodySize,
+    upperShadow,
+    lowerShadow,
+    totalRange,
+    priceChange,
+    gapUp,
+    volatility,
+    bodyToShadowRatio
   };
 }
 
-// 计算布林带指标
+// Calculate volume patterns with safety checks
+function calculateVolumePatterns(kline, prevKline) {
+  if (!prevKline) return null;
+
+  const { volume, close, open } = kline;
+  const prevVolume = prevKline.volume;
+  
+  if (!isFinite(volume) || !isFinite(close) || !isFinite(open) || !isFinite(prevVolume)) {
+    return null;
+  }
+
+  // Volume momentum
+  const volumeChange = prevVolume !== 0 ? (volume - prevVolume) / prevVolume : 0;
+  
+  // Price-volume relationship
+  const volumePriceRatio = volume * Math.abs(close - open);
+  const volumeTrend = volume * (close > open ? 1 : -1);
+  
+  return {
+    volumeChange,
+    volumePriceRatio,
+    volumeTrend
+  };
+}
+
+// Calculate Bollinger Bands with safety checks
 function calculateBollingerBands(prices, period = 20, stdDev = 2) {
-  const sma = prices.reduce((a, b) => a + b, 0) / period;
-  const variance = prices.reduce((a, b) => a + Math.pow(b - sma, 2), 0) / period;
-  const std = Math.sqrt(variance);
+  const results = [];
   
-  const upper = sma + (stdDev * std);
-  const lower = sma - (stdDev * std);
-  const width = (upper - lower) / sma * 100;
-  
-  const currentPrice = prices[prices.length - 1];
-  const upperBandDistance = ((upper - currentPrice) / (upper - lower)) * 100;
-  const lowerBandDistance = ((currentPrice - lower) / (upper - lower)) * 100;
-  const middleBandDeviation = ((currentPrice - sma) / currentPrice) * 100;
-  
-  return {
-    width,
-    upperBandDistance,
-    lowerBandDistance,
-    middleBandDeviation,
-    sma
-  };
-}
-
-// Calculate ATR (Average True Range)
-function calculateATR(klines, period = 14) {
-  const trueRanges = klines.map((kline, i) => {
-    if (i === 0) return kline.high - kline.low;
-    const previousClose = klines[i - 1].close;
-    return Math.max(
-      kline.high - kline.low,
-      Math.abs(kline.high - previousClose),
-      Math.abs(kline.low - previousClose)
-    );
-  });
-
-  let atr = trueRanges.slice(0, period).reduce((a, b) => a + b) / period;
-  const atrValues = [atr];
-
-  for (let i = period; i < trueRanges.length; i++) {
-    atr = ((atr * (period - 1)) + trueRanges[i]) / period;
-    atrValues.push(atr);
-  }
-
-  return atrValues;
-}
-
-export function calculateFutureReturns(klines, futureSteps = 4) {
-  const returns = [];
-  
-  for (let i = 0; i < klines.length - futureSteps; i++) {
-    const currentPrice = klines[i].close;
-    const futurePrice = klines[i + futureSteps].close;
-    const returnPercentage = ((futurePrice - currentPrice) / currentPrice) * 100;
-    returns.push(returnPercentage);
+  for (let i = period - 1; i < prices.length; i++) {
+    const slice = prices.slice(i - period + 1, i + 1);
+    const sma = slice.reduce((a, b) => a + (isFinite(b) ? b : 0), 0) / period;
+    
+    const squaredDiffs = slice.map(price => {
+      if (!isFinite(price)) return 0;
+      const diff = price - sma;
+      return diff * diff;
+    });
+    
+    const variance = squaredDiffs.reduce((a, b) => a + b, 0) / period;
+    const std = Math.sqrt(variance);
+    
+    const upper = sma + (stdDev * std);
+    const lower = sma - (stdDev * std);
+    const bandwidth = sma !== 0 ? (upper - lower) / sma : 0;
+    const currentPrice = prices[i];
+    const percentB = upper !== lower ? ((currentPrice - lower) / (upper - lower)) * 100 : 50;
+    
+    results.push({
+      bandwidth,
+      percentB,
+      deviation: std !== 0 ? (currentPrice - sma) / std : 0
+    });
   }
   
-  return returns;
+  // Pad beginning with null values
+  return Array(period - 1).fill(null).concat(results);
 }
 
 export function prepareTrainingData(klines, lookback = 20) {
@@ -207,82 +250,79 @@ export function prepareTrainingData(klines, lookback = 20) {
   }
 
   const features = [];
-  const returns = calculateFutureReturns(klines);
+  const returns = [];
+  
+  // Calculate base price series
   const closePrices = klines.map(k => k.close);
   
-  // Calculate indicators that need the full price history
+  // Calculate technical indicators
   const rsi = calculateRSI(closePrices);
   const macd = calculateMACD(closePrices);
-  const atr = calculateATR(klines);
+  const momentum = calculateMomentum(closePrices, 10);
+  const roc = calculateROC(closePrices, 14);
+  const bBands = calculateBollingerBands(closePrices);
   
+  // Calculate future returns (target variable)
+  for (let i = 0; i < klines.length - 4; i++) {
+    const currentPrice = klines[i].close;
+    const futurePrice = klines[i + 4].close;
+    if (!isFinite(currentPrice) || !isFinite(futurePrice) || currentPrice === 0) {
+      returns.push(0);
+    } else {
+      returns.push((futurePrice - currentPrice) / currentPrice * 100);
+    }
+  }
+  
+  // Create feature windows
   for (let i = lookback; i < klines.length - 4; i++) {
-    const window = klines.slice(i - lookback, i);
-    const windowFeatures = [];
+    const window = [];
     
-    for (let j = 0; j < window.length; j++) {
-      const kline = window[j];
-      const volatility = calculateVolatilityMetrics(kline);
+    for (let j = i - lookback; j < i; j++) {
+      const pricePatterns = calculatePricePatterns(klines[j], klines[j - 1]);
+      const volumePatterns = calculateVolumePatterns(klines[j], klines[j - 1]);
       
-      const priceWindow = klines.slice(Math.max(0, i - lookback + j - 19), i - lookback + j + 1)
-        .map(k => k.close);
-      const bb = calculateBollingerBands(priceWindow);
+      if (!pricePatterns || !volumePatterns) {
+        // Use zero values for missing patterns
+        window.push(new Array(16).fill(0));
+        continue;
+      }
       
-      const timeStepFeatures = [
-        // Price & Volume
-        kline.close / kline.open - 1, // Normalized price change
-        Math.log(kline.volume), // Log volume
+      const features = [
+        // Price patterns (clipped to reasonable ranges)
+        Math.min(Math.max(pricePatterns.bodySize, -1), 1),
+        Math.min(Math.max(pricePatterns.upperShadow, -1), 1),
+        Math.min(Math.max(pricePatterns.lowerShadow, -1), 1),
+        Math.min(Math.max(pricePatterns.totalRange, -1), 1),
+        Math.min(Math.max(pricePatterns.priceChange, -1), 1),
+        Math.min(Math.max(pricePatterns.volatility, -1), 1),
+        Math.min(Math.max(pricePatterns.bodyToShadowRatio, -1), 1),
         
-        // Volatility Metrics
-        volatility.highLowVolatility,
-        volatility.openCloseVolatility,
-        volatility.bodyToShadowRatio,
+        // Volume patterns (clipped to reasonable ranges)
+        Math.min(Math.max(volumePatterns.volumeChange, -1), 1),
+        Math.min(Math.max(Math.log1p(Math.abs(volumePatterns.volumePriceRatio)) * Math.sign(volumePatterns.volumePriceRatio), -1), 1),
         
-        // Technical Indicators
-        rsi[i - lookback + j] / 100, // Normalized RSI
-        macd.macdLine[i - lookback + j],
-        macd.histogram[i - lookback + j],
-        bb.width / 100, // Normalized BB width
-        bb.middleBandDeviation / 100,
+        // Technical indicators (normalized)
+        Math.min(Math.max(rsi[j] / 100, 0), 1),
+        Math.min(Math.max(macd.histogram[j] / 100, -1), 1),
+        Math.min(Math.max(momentum[j] / 100, -1), 1),
+        Math.min(Math.max(roc[j] / 100, -1), 1),
         
-        // Trend & Momentum
-        atr[i - lookback + j] / kline.close, // Normalized ATR
-        (kline.close - bb.sma) / bb.sma // Price deviation from SMA
+        // Bollinger Bands features (normalized)
+        bBands[j] ? Math.min(Math.max(bBands[j].bandwidth, 0), 1) : 0,
+        bBands[j] ? Math.min(Math.max(bBands[j].percentB / 100, 0), 1) : 0.5,
+        bBands[j] ? Math.min(Math.max(bBands[j].deviation, -1), 1) : 0
       ];
       
-      windowFeatures.push(timeStepFeatures);
+      window.push(features);
     }
     
-    features.push(windowFeatures);
+    if (window.length === lookback) {
+      features.push(window);
+    }
   }
 
-  // Normalize features
-  const normalizedFeatures = features.map(window => {
-    const transposed = Array(window[0].length).fill().map(() => []);
-    
-    for (let i = 0; i < window.length; i++) {
-      for (let j = 0; j < window[i].length; j++) {
-        transposed[j].push(window[i][j]);
-      }
-    }
-    
-    const normalized = transposed.map(feature => {
-      const mean = feature.reduce((a, b) => a + b, 0) / feature.length;
-      const std = Math.sqrt(feature.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / feature.length) || 1;
-      return feature.map(value => (value - mean) / std);
-    });
-    
-    const result = Array(window.length).fill().map(() => []);
-    for (let i = 0; i < normalized.length; i++) {
-      for (let j = 0; j < normalized[i].length; j++) {
-        result[j].push(normalized[i][j]);
-      }
-    }
-    
-    return result;
-  });
-
   return {
-    features: normalizedFeatures,
+    features,
     labels: returns.slice(lookback)
   };
 }

@@ -1,7 +1,7 @@
 export const HYPERPARAMETERS = {
   // Model structure
   lookbackWindow: 20,
-  featureSize: 12,
+  featureSize: 16,  // Updated to match new feature set (price patterns + volume patterns + technical indicators)
   
   // Training parameters
   epochs: 200,
