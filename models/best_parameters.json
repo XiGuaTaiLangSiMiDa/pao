@@ -3,17 +3,17 @@
     "batchSize": 32,
     "learningRate": 0.001,
     "lstmUnits": [
-      64,
-      32
+      96,
+      48
     ],
-    "dropoutRate": 0.15,
+    "dropoutRate": 0.1,
     "l2Regularization": 0.0001
   },
-  "score": 0.1967715877690735,
+  "score": 0.19303367738120047,
   "hyperparameters": {
     "lookbackWindow": 20,
     "featureSize": 16,
-    "epochs": 10,
+    "epochs": 50,
     "validationSplit": 0.2,
     "patience": 15,
     "searchSpace": {
@@ -53,5 +53,5 @@
       ]
     }
   },
-  "timestamp": "2024-11-13T09:56:45.479Z"
+  "timestamp": "2024-11-13T10:11:56.579Z"
 }

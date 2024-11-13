@@ -29,8 +29,12 @@ export async function makePrediction() {
       lookback: WindowConfig.DEFAULT_LOOKBACK
     });
     
-    if (features.length === 0 || !features[0]) {
+    if (!features || features.length === 0 || !features[0]) {
       throw new Error('No features generated from the data');
+    }
+
+    if (!metadata || !metadata.price || !metadata.indicators || !metadata.analysis) {
+      throw new Error('Invalid metadata structure from prediction data');
     }
 
     const latestFeature = features[0];
@@ -61,53 +65,40 @@ export async function makePrediction() {
     // Calculate predicted price
     const predictedPrice = currentPrice * (1 + predictedChange[0]/100);
 
-    // Save prediction to history
+    // Create prediction record with complete metadata
     const predictionRecord = {
       timestamp: Date.now(),
-      currentPrice,
       predictedChange: predictedChange[0],
       predictedPrice,
       confidence,
-      ...metadata
+      metadata: {
+        price: {
+          open: metadata.price.open,
+          high: metadata.price.high,
+          low: metadata.price.low,
+          close: metadata.price.close
+        },
+        indicators: {
+          rsi: metadata.indicators.rsi,
+          momentum: metadata.indicators.momentum,
+          macd: metadata.indicators.macd,
+          roc: metadata.indicators.roc,
+          bBands: metadata.indicators.bBands
+        },
+        analysis: {
+          trend: metadata.analysis.trend,
+          strength: metadata.analysis.strength,
+          volatility: metadata.analysis.volatility,
+          riskLevel: metadata.analysis.riskLevel
+        }
+      }
     };
+
+    // Save prediction to history
     fs.writeFileSync(PREDICTION_HISTORY_FILE, JSON.stringify([predictionRecord], null, 2));
 
-    // Output results
-    console.log('\nMarket Analysis:');
-    console.log('Current SOL Price:', currentPrice.toFixed(2), 'USDT');
-    console.log('Market Volatility:', (metadata.analysis.volatility * 100).toFixed(2) + '%');
-    console.log('RSI:', metadata.indicators.rsi.toFixed(2));
-    console.log('Trend:', metadata.analysis.trend);
-    console.log('Strength:', metadata.analysis.strength);
-    
-    console.log('\nPrediction Results:');
-    console.log('Predicted 1h Price Change:', predictedChange[0].toFixed(2) + '%');
-    console.log('Prediction Confidence:', confidence.toFixed(2) + '%');
-    console.log('Predicted Price in 1h:', predictedPrice.toFixed(2), 'USDT');
-    
-    // Market statistics
-    console.log('\nMarket Statistics:');
-    console.log('High:', metadata.price.high.toFixed(2), 'USDT');
-    console.log('Low:', metadata.price.low.toFixed(2), 'USDT');
-    
-    // Trading signal with confidence consideration
-    console.log('\nTrading Signal:');
-    const signal = generateSignal(predictedChange[0], confidence);
-    console.log(signal);
-
-    // Risk assessment
-    console.log('\nRisk Assessment:');
-    if (metadata.analysis.riskLevel > 0.7) {
-      console.log('⚠️ High risk conditions - Exercise extreme caution');
-    } else if (metadata.analysis.riskLevel > 0.5) {
-      console.log('⚠️ Moderate risk conditions - Trade with caution');
-    }
-    
-    if (metadata.analysis.trend === 'overbought') {
-      console.log('⚠️ Overbought conditions - Potential reversal risk');
-    } else if (metadata.analysis.trend === 'oversold') {
-      console.log('⚠️ Oversold conditions - Potential reversal risk');
-    }
+    // Log prediction details
+    console.log('\nPrediction Record:', JSON.stringify(predictionRecord, null, 2));
 
     return predictionRecord;
 
@@ -133,24 +124,6 @@ function calculateConfidence(predictedChange, rsi, volatility) {
     // Base confidence (20%)
     20
   )));
-}
-
-function generateSignal(predictedChange, confidence) {
-  if (confidence < 60) {
-    return '⚠️ Low Confidence - Consider waiting for better conditions';
-  }
-  
-  if (predictedChange > 1.5) {
-    return '🟢 Strong Buy Signal';
-  } else if (predictedChange > 0.5) {
-    return '🟡 Weak Buy Signal';
-  } else if (predictedChange < -1.5) {
-    return '🔴 Strong Sell Signal';
-  } else if (predictedChange < -0.5) {
-    return '🟠 Weak Sell Signal';
-  }
-  
-  return '⚪ Neutral Signal';
 }
 
 // If directly run this file, execute prediction

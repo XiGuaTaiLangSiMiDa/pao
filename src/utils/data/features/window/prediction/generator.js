@@ -26,8 +26,31 @@ export function generatePredictionData(klines, lookback = WindowConfig.DEFAULT_L
         throw new Error('Invalid prediction window generated');
     }
 
+    // Get latest kline and generate metadata
+    const latestKline = klines[klines.length - 1];
+    if (!latestKline) {
+        throw new Error('No latest kline data available');
+    }
+
+    // Get latest indicators
+    const latestIndicators = {
+        rsi: indicators.rsi[indicators.rsi.length - 1],
+        macd: indicators.macd.histogram[indicators.macd.histogram.length - 1],
+        momentum: indicators.momentum[indicators.momentum.length - 1],
+        roc: indicators.roc[indicators.roc.length - 1],
+        bBands: indicators.bBands[indicators.bBands.length - 1]
+    };
+
+    // Generate metadata with validation
+    const metadata = generateMetadata(latestKline, latestIndicators);
+    if (!metadata || !metadata.price || !metadata.indicators || !metadata.analysis) {
+        throw new Error('Failed to generate valid metadata');
+    }
+
+    console.log('Generated metadata:', JSON.stringify(metadata, null, 2));
+
     return {
         features: [window],
-        metadata: generateMetadata(klines[klines.length - 1], indicators)
+        metadata
     };
 }
