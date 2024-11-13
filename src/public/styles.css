@@ -120,6 +120,9 @@ body {
     text-align: left;
     color: #9ba3af;
     font-weight: normal;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 .prediction-history td {
@@ -127,16 +130,58 @@ body {
     border-bottom: 1px solid #363a45;
 }
 
-/* Table Row Signal Colors */
-.prediction-history tr.strong-buy-row { background: rgba(0, 137, 123, 0.1); }
-.prediction-history tr.buy-row { background: rgba(38, 166, 154, 0.1); }
-.prediction-history tr.strong-sell-row { background: rgba(211, 47, 47, 0.1); }
-.prediction-history tr.sell-row { background: rgba(239, 83, 80, 0.1); }
-.prediction-history tr.neutral-row { background: rgba(120, 144, 156, 0.1); }
-.prediction-history tr.low-confidence-row { background: rgba(255, 152, 0, 0.1); }
+/* Enhanced Table Row Signal Colors */
+.prediction-history tr.strong-buy-row {
+    background: rgba(0, 137, 123, 0.3);
+    color: #00e5ff;
+}
 
-/* Hover effect for table rows */
-.prediction-history tr:hover {
-    background: #363a45;
-    transition: background-color 0.2s ease;
+.prediction-history tr.buy-row {
+    background: rgba(38, 166, 154, 0.2);
+    color: #64ffda;
+}
+
+.prediction-history tr.strong-sell-row {
+    background: rgba(211, 47, 47, 0.3);
+    color: #ff5252;
+}
+
+.prediction-history tr.sell-row {
+    background: rgba(239, 83, 80, 0.2);
+    color: #ff8a80;
+}
+
+.prediction-history tr.neutral-row {
+    background: rgba(120, 144, 156, 0.15);
+    color: #b0bec5;
+}
+
+.prediction-history tr.low-confidence-row {
+    background: rgba(255, 152, 0, 0.15);
+    color: #ffd180;
+}
+
+/* Hover effect for table rows - preserve signal colors */
+.prediction-history tr.strong-buy-row:hover {
+    background: rgba(0, 137, 123, 0.4);
+}
+
+.prediction-history tr.buy-row:hover {
+    background: rgba(38, 166, 154, 0.3);
+}
+
+.prediction-history tr.strong-sell-row:hover {
+    background: rgba(211, 47, 47, 0.4);
+}
+
+.prediction-history tr.sell-row:hover {
+    background: rgba(239, 83, 80, 0.3);
+}
+
+.prediction-history tr.neutral-row:hover {
+    background: rgba(120, 144, 156, 0.25);
+}
+
+.prediction-history tr.low-confidence-row:hover {
+    background: rgba(255, 152, 0, 0.25);
 }
