@@ -1,6 +1,8 @@
 class PredictionUpdater {
     constructor() {
         this.updateInterval = 5000; // 5 seconds
+        this.predictionHistory = [];
+        this.historyLimit = 1080; // 2 hours worth of 5-minute predictions
         this.initializeUpdateLoop();
     }
 
@@ -9,8 +11,70 @@ class PredictionUpdater {
             const response = await fetch('/predict');
             const data = await response.json();
             this.updateUI(data);
+            this.updatePredictionHistory(data);
         } catch (error) {
             console.error('Error updating prediction:', error);
+        }
+    }
+
+    updatePredictionHistory(data) {
+        // Add new prediction to history
+        const prediction = {
+            time: new Date(),
+            currentPrice: data.currentPrice,
+            predictedChange: data.predictedChange,
+            predictedPrice: data.predictedPrice,
+            confidence: data.confidence,
+            signal: data.signal
+        };
+
+        this.predictionHistory.unshift(prediction);
+
+        // Remove old predictions (keep last 2 hours)
+        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+        this.predictionHistory = this.predictionHistory.filter(p => p.time > twoHoursAgo);
+
+        // Limit total number of entries
+        if (this.predictionHistory.length > this.historyLimit) {
+            this.predictionHistory = this.predictionHistory.slice(0, this.historyLimit);
+        }
+
+        this.updateHistoryTable();
+    }
+
+    updateHistoryTable() {
+        const tbody = document.getElementById('prediction-history-body');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+        
+        this.predictionHistory.forEach(prediction => {
+            const row = document.createElement('tr');
+            
+            // Add signal class for coloring
+            row.className = this.getSignalClass(prediction.signal);
+            
+            row.innerHTML = `
+                <td>${prediction.time.toLocaleTimeString()}</td>
+                <td>$${prediction.currentPrice.toFixed(2)}</td>
+                <td>${prediction.predictedChange.toFixed(2)}%</td>
+                <td>$${prediction.predictedPrice.toFixed(2)}</td>
+                <td>${prediction.confidence.toFixed(1)}%</td>
+                <td>${prediction.signal}</td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+    }
+
+    getSignalClass(signal) {
+        switch(signal) {
+            case 'Strong Buy': return 'strong-buy-row';
+            case 'Buy': return 'buy-row';
+            case 'Strong Sell': return 'strong-sell-row';
+            case 'Sell': return 'sell-row';
+            case 'Low Confidence': return 'low-confidence-row';
+            default: return 'neutral-row';
         }
     }
 
