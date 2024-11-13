@@ -40,5 +40,47 @@
       "totalPredictions": 196
     },
     "timestamp": "2024-11-13T10:24:07.617Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.001,
+      "lstmUnits": [
+        64,
+        32
+      ],
+      "dropoutRate": 0.1,
+      "l2Regularization": 0.0001
+    },
+    "score": 0.207887306769311,
+    "evaluation": {
+      "mse": 0.029989915476536313,
+      "mae": 0.14276705362967082,
+      "directionalAccuracy": 99.48979591836735,
+      "validPredictions": 196,
+      "totalPredictions": 196
+    },
+    "timestamp": "2024-11-13T10:25:18.113Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.001,
+      "lstmUnits": [
+        64,
+        32
+      ],
+      "dropoutRate": 0.15,
+      "l2Regularization": 0.00001
+    },
+    "score": 0.19298305527607287,
+    "evaluation": {
+      "mse": 0.019191187126370936,
+      "mae": 0.10748451978576426,
+      "directionalAccuracy": 99.48979591836735,
+      "validPredictions": 196,
+      "totalPredictions": 196
+    },
+    "timestamp": "2024-11-13T10:27:21.631Z"
   }
 ]
