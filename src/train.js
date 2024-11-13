@@ -13,7 +13,7 @@ async function trainModel() {
       limit: 1500
     });
 
-    console.log('Preparing training data...');
+    console.log(`Preparing training data... ${klines.length}`);
     const { features, labels } = prepareTrainingData(klines, HYPERPARAMETERS.lookbackWindow);
 
     // Preprocess data

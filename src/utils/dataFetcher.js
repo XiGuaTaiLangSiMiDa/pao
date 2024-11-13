@@ -67,7 +67,7 @@ export async function fetchKlines({
       takerBuyBaseVolume: parseFloat(kline[9]),
       takerBuyQuoteVolume: parseFloat(kline[10])
     }));
-
+    console.log(`Klines: ${klines.length}`);
     // Validate each kline
     klines.forEach(validateKlineData);
 
