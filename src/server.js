@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { makePrediction } from './predict.js';
+import { makePrediction } from './utils/webPredict.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,13 +9,23 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = 80;
 
+// Parse JSON bodies
+app.use(express.json());
+
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Prediction endpoint
-app.get('/predict', async (req, res) => {
+app.post('/predict', async (req, res) => {
     try {
-        const prediction = await makePrediction();
+        // Validate request body
+        const { klines } = req.body;
+        if (!klines || !Array.isArray(klines) || klines.length === 0) {
+            throw new Error('Invalid request: klines data is required');
+        }
+
+        // Make prediction using provided klines
+        const prediction = await makePrediction(klines);
         
         // Validate prediction data
         if (!prediction || !prediction.metadata) {

@@ -3,12 +3,41 @@ class PredictionUpdater {
         this.updateInterval = 5000; // 5 seconds
         this.predictionHistory = [];
         this.historyLimit = 1080; // 2 hours worth of 5-minute predictions
+        this.waitForChartReady();
+    }
+
+    waitForChartReady() {
+        const widget = window.getTVWidget();
+        if (!widget) {
+            console.log('Waiting for TradingView widget...');
+            setTimeout(() => this.waitForChartReady(), 1000);
+            return;
+        }
+
+        console.log('TradingView widget ready, starting prediction updates');
         this.initializeUpdateLoop();
     }
 
     async updatePrediction() {
         try {
-            const response = await fetch('/predict');
+            // Get klines from TradingView widget
+            const klines = await window.getChartData();
+            if (!klines || klines.length === 0) {
+                console.log('Waiting for kline data...');
+                return;
+            }
+            
+            console.log('Got klines:', klines.length);
+            
+            // Send klines to server for prediction
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ klines })
+            });
+            
             const data = await response.json();
             
             if (data.error) {
@@ -209,5 +238,6 @@ class PredictionUpdater {
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     initChart();
-    new PredictionUpdater();
+    // Wait a bit for TradingView to initialize
+    setTimeout(() => new PredictionUpdater(), 2000);
 });
