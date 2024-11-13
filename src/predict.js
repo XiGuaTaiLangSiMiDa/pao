@@ -1,94 +1,17 @@
 import * as tf from '@tensorflow/tfjs-node';
 import { fetchKlines, prepareTrainingData } from './utils/dataFetcher.js';
+import { preprocessFeatures } from './utils/preprocessing.js';
 import fs from 'fs';
 import path from 'path';
 
 const LOOKBACK_WINDOW = 20;
 const PREDICTION_HISTORY_FILE = './models/prediction_history.json';
 
-// Load prediction history
-function loadPredictionHistory() {
-  try {
-    if (fs.existsSync(PREDICTION_HISTORY_FILE)) {
-      const history = JSON.parse(fs.readFileSync(PREDICTION_HISTORY_FILE, 'utf8'));
-      return history;
-    }
-    return [];
-  } catch (error) {
-    console.error('Error loading prediction history:', error);
-    return [];
-  }
-}
-
-// Save prediction history
-function savePredictionHistory(prediction) {
-  try {
-    let history = loadPredictionHistory();
-    history.push(prediction);
-    
-    // Keep only last 1000 predictions
-    if (history.length > 1000) {
-      history = history.slice(-1000);
-    }
-    
-    // Ensure directory exists
-    const dir = path.dirname(PREDICTION_HISTORY_FILE);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    
-    fs.writeFileSync(PREDICTION_HISTORY_FILE, JSON.stringify(history, null, 2));
-  } catch (error) {
-    console.error('Error saving prediction history:', error);
-  }
-}
-
-// Calculate prediction accuracy based on history
-function calculateHistoricalAccuracy() {
-  const history = loadPredictionHistory();
-  if (history.length === 0) return null;
-
-  const recentHistory = history.slice(-100); // Use last 100 predictions
-  let correctDirections = 0;
-  let totalPredictions = 0;
-
-  recentHistory.forEach(pred => {
-    if (pred.actualChange !== undefined) {
-      if ((pred.predictedChange > 0 && pred.actualChange > 0) ||
-          (pred.predictedChange < 0 && pred.actualChange < 0)) {
-        correctDirections++;
-      }
-      totalPredictions++;
-    }
-  });
-
-  return totalPredictions > 0 ? (correctDirections / totalPredictions) * 100 : null;
-}
-
-// Calculate confidence score
-function calculateConfidenceScore(prediction, volatility, rsi) {
-  let confidence = 0;
-  
-  // Factor 1: Prediction magnitude (stronger predictions = higher confidence)
-  const magnitudeScore = Math.min(Math.abs(prediction) / 2, 1) * 0.3;
-  
-  // Factor 2: RSI extremes reduce confidence
-  const rsiScore = (rsi > 30 && rsi < 70) ? 0.3 : 0.1;
-  
-  // Factor 3: Volatility (high volatility = lower confidence)
-  const volatilityScore = Math.max(0, 1 - volatility) * 0.2;
-  
-  // Factor 4: Historical accuracy
-  const histAccuracy = calculateHistoricalAccuracy();
-  const historyScore = histAccuracy ? (histAccuracy / 100) * 0.2 : 0.1;
-  
-  confidence = magnitudeScore + rsiScore + volatilityScore + historyScore;
-  return Math.min(confidence * 100, 100);
-}
-
 async function loadModel() {
   try {
-    const model = await tf.loadLayersModel('file://./models/sol_predictor/model.json');
+    console.log('Loading best model...');
+    const model = await tf.loadLayersModel('file://./models/best_model/model.json');
+    console.log('Model loaded successfully');
     return model;
   } catch (error) {
     console.error('Error loading model:', error);
@@ -98,7 +21,6 @@ async function loadModel() {
 
 async function makePrediction() {
   try {
-    console.log('Loading model...');
     const model = await loadModel();
 
     console.log('Fetching latest market data...');
@@ -106,7 +28,9 @@ async function makePrediction() {
       interval: '15m',
       limit: LOOKBACK_WINDOW + 5
     });
+    console.log('Market data fetched successfully');
 
+    console.log('Preparing training data...');
     const { features } = prepareTrainingData(klines, LOOKBACK_WINDOW);
     
     if (features.length === 0) {
@@ -115,6 +39,15 @@ async function makePrediction() {
 
     const latestFeature = features[features.length - 1];
     const currentPrice = klines[klines.length - 1].close;
+    
+    // Use all 16 features
+    console.log('Processing features...');
+    console.log('Feature shape:', [latestFeature.length, latestFeature[0].length]);
+    
+    // Preprocess features using the same pipeline as training
+    console.log('Preprocessing features...');
+    const preprocessedFeatures = await preprocessFeatures([latestFeature]);
+    console.log('Preprocessed feature shape:', preprocessedFeatures.shape);
     
     // Calculate current market conditions
     const prices = klines.map(k => k.close);
@@ -126,18 +59,28 @@ async function makePrediction() {
     const losses = priceChanges.map(change => change < 0 ? -change : 0);
     const avgGain = gains.reduce((sum, gain) => sum + gain, 0) / gains.length;
     const avgLoss = losses.reduce((sum, loss) => sum + loss, 0) / losses.length;
-    const rsi = 100 - (100 / (1 + avgGain / avgLoss));
+    const rsi = 100 - (100 / (1 + (avgGain || 1e-6) / (avgLoss || 1e-6)));
 
     // Make prediction
-    const inputTensor = tf.tensor3d([latestFeature]);
-    const prediction = model.predict(inputTensor);
+    console.log('Making prediction...');
+    const prediction = model.predict(preprocessedFeatures);
     const predictedChange = await prediction.data();
+    console.log('Prediction completed');
     
-    // Calculate confidence score
-    const confidence = calculateConfidenceScore(predictedChange[0], volatility, rsi);
+    // Calculate confidence score based on prediction magnitude and market conditions
+    const confidence = Math.min(100, Math.max(0, (
+      // Prediction magnitude (30%)
+      (Math.min(Math.abs(predictedChange[0]) / 2, 1) * 30) +
+      // RSI not at extremes (30%)
+      ((rsi > 30 && rsi < 70) ? 30 : 10) +
+      // Low volatility (20%)
+      (Math.max(0, 1 - volatility) * 20) +
+      // Base confidence (20%)
+      20
+    )));
 
     // Clean up tensors
-    inputTensor.dispose();
+    preprocessedFeatures.dispose();
     prediction.dispose();
 
     // Save prediction to history
@@ -149,10 +92,7 @@ async function makePrediction() {
       volatility,
       rsi
     };
-    savePredictionHistory(predictionRecord);
-
-    // Calculate historical accuracy
-    const histAccuracy = calculateHistoricalAccuracy();
+    fs.writeFileSync(PREDICTION_HISTORY_FILE, JSON.stringify([predictionRecord], null, 2));
 
     // Output results
     console.log('\nMarket Analysis:');
@@ -163,12 +103,10 @@ async function makePrediction() {
     console.log('\nPrediction Results:');
     console.log('Predicted 1h Price Change:', predictedChange[0].toFixed(2) + '%');
     console.log('Prediction Confidence:', confidence.toFixed(2) + '%');
-    console.log('Historical Accuracy:', histAccuracy ? histAccuracy.toFixed(2) + '%' : 'Insufficient data');
     console.log('Predicted Price in 1h:', (currentPrice * (1 + predictedChange[0]/100)).toFixed(2), 'USDT');
     
     // Market statistics
-    const recentPrices = klines.map(k => k.close);
-    const priceChange24h = ((currentPrice - recentPrices[0]) / recentPrices[0] * 100).toFixed(2);
+    const priceChange24h = ((currentPrice - prices[0]) / prices[0] * 100).toFixed(2);
     const highPrice = Math.max(...klines.map(k => k.high));
     const lowPrice = Math.min(...klines.map(k => k.low));
     
@@ -208,15 +146,19 @@ async function makePrediction() {
 
   } catch (error) {
     console.error('Error making prediction:', error);
+    console.error('Error stack:', error.stack);
     if (error.message.includes('tensor')) {
       console.error('Tensor shape error. Please check the input data format.');
+      console.error('Expected shape: [null,20,16]');
     }
   }
 }
 
 // If directly run this file, execute prediction
 if (process.argv[1] === new URL(import.meta.url).pathname) {
-  makePrediction();
+  console.log('Starting prediction process...');
+  makePrediction().catch(error => {
+    console.error('Fatal error:', error);
+    process.exit(1);
+  });
 }
-
-export { makePrediction };
