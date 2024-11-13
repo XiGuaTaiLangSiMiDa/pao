@@ -1,15 +1,15 @@
 {
   "parameters": {
-    "batchSize": 64,
+    "batchSize": 32,
     "learningRate": 0.001,
     "lstmUnits": [
-      128,
-      64
+      32,
+      16
     ],
-    "dropoutRate": 0.3,
-    "l2Regularization": 0.01
+    "dropoutRate": 0.2,
+    "l2Regularization": 0.0001
   },
-  "score": 0.022749196561524965,
+  "score": 0.03948552835090505,
   "hyperparameters": {
     "lookbackWindow": 20,
     "featureSize": 16,
@@ -53,5 +53,5 @@
       ]
     }
   },
-  "timestamp": "2024-11-13T03:00:53.305Z"
+  "timestamp": "2024-11-13T07:59:26.154Z"
 }
