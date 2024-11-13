@@ -53,7 +53,7 @@ export async function fetchKlines({
     if (!response.data) {
       throw new Error('Failed to fetch kline data after retries');
     }
-
+    console.log(`First line: ${response.data[0]}`);
     const klines = response.data.map(kline => ({
       openTime: kline[0],
       open: parseFloat(kline[1]),
