@@ -3,17 +3,17 @@
     "batchSize": 32,
     "learningRate": 0.001,
     "lstmUnits": [
-      32,
-      16
+      64,
+      32
     ],
-    "dropoutRate": 0.2,
-    "l2Regularization": 0.0001
+    "dropoutRate": 0.1,
+    "l2Regularization": 0.00005
   },
-  "score": 0.03948552835090505,
+  "score": 0.0028813720834331446,
   "hyperparameters": {
     "lookbackWindow": 20,
     "featureSize": 16,
-    "epochs": 200,
+    "epochs": 10,
     "validationSplit": 0.2,
     "patience": 15,
     "searchSpace": {
@@ -29,12 +29,12 @@
       ],
       "lstmUnits": [
         [
-          32,
-          16
-        ],
-        [
           64,
           32
+        ],
+        [
+          96,
+          48
         ],
         [
           128,
@@ -42,16 +42,16 @@
         ]
       ],
       "dropoutRate": [
-        0.2,
-        0.3,
-        0.4
+        0.1,
+        0.15,
+        0.2
       ],
       "l2Regularization": [
-        0.0001,
-        0.001,
-        0.01
+        0.00001,
+        0.00005,
+        0.0001
       ]
     }
   },
-  "timestamp": "2024-11-13T07:59:26.154Z"
+  "timestamp": "2024-11-13T09:05:25.477Z"
 }
