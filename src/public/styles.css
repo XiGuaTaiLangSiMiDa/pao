@@ -94,3 +94,49 @@ body {
 }
 .change-positive { color: #26a69a; }
 .change-negative { color: #ef5350; }
+
+/* Prediction History Table Styles */
+.prediction-history-panel {
+    background: #2a2e39;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.table-container {
+    overflow-x: auto;
+    margin-top: 15px;
+}
+
+.prediction-history {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.prediction-history th {
+    background: #363a45;
+    padding: 12px;
+    text-align: left;
+    color: #9ba3af;
+    font-weight: normal;
+}
+
+.prediction-history td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #363a45;
+}
+
+/* Table Row Signal Colors */
+.prediction-history tr.strong-buy-row { background: rgba(0, 137, 123, 0.1); }
+.prediction-history tr.buy-row { background: rgba(38, 166, 154, 0.1); }
+.prediction-history tr.strong-sell-row { background: rgba(211, 47, 47, 0.1); }
+.prediction-history tr.sell-row { background: rgba(239, 83, 80, 0.1); }
+.prediction-history tr.neutral-row { background: rgba(120, 144, 156, 0.1); }
+.prediction-history tr.low-confidence-row { background: rgba(255, 152, 0, 0.1); }
+
+/* Hover effect for table rows */
+.prediction-history tr:hover {
+    background: #363a45;
+    transition: background-color 0.2s ease;
+}
