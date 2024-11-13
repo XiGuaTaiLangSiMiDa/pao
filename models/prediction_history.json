@@ -1,32 +1,32 @@
 [
   {
-    "timestamp": 1731493398726,
-    "predictedChange": 0.24063558876514435,
-    "predictedPrice": 207.2575381433308,
-    "confidence": 73.51247001201587,
+    "timestamp": 1731493458810,
+    "predictedChange": 0.4405100643634796,
+    "predictedPrice": 207.6406664560586,
+    "confidence": 76.50670459321245,
     "metadata": {
       "price": {
         "open": 206.05,
-        "high": 206.98,
+        "high": 207.02,
         "low": 205.98,
-        "close": 206.76
+        "close": 206.73
       },
       "indicators": {
-        "rsi": 59.0446427889646,
-        "momentum": 0.7504141896501171,
-        "macd": 0.10192949678168028,
-        "roc": 2.229913473423976,
+        "rsi": 58.94017462993772,
+        "momentum": 0.7357957314101826,
+        "macd": 0.10001496686715095,
+        "roc": 2.215080346106299,
         "bBands": {
-          "bandwidth": 0.02577411309055666,
-          "percentB": 76.43114725487702,
-          "deviation": 1.0572458901950832
+          "bandwidth": 0.025743708219577152,
+          "percentB": 75.92347019890613,
+          "deviation": 1.036938807956246
         }
       },
       "analysis": {
         "trend": "uptrend",
         "strength": "moderate",
-        "volatility": 0.00485319097306479,
-        "riskLevel": 0.0019412763892259158
+        "volatility": 0.005047318611987481,
+        "riskLevel": 0.0020189274447949923
       }
     }
   }
