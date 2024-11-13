@@ -1,4 +1,4 @@
-import { fetchKlines } from '../dataFetcher.js';
+import { fetchKlines } from '../data/fetcher.js';
 import { CACHE_CONFIG } from './config.js';
 
 export class KlineFetcher {

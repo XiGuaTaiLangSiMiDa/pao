@@ -4,7 +4,7 @@ export const HYPERPARAMETERS = {
   featureSize: 16,  // Price patterns + volume patterns + technical indicators
   
   // Training parameters
-  epochs: 10,
+  epochs: 50,
   validationSplit: 0.2,
   patience: 15,
   
