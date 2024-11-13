@@ -10,6 +10,12 @@ class PredictionUpdater {
         try {
             const response = await fetch('/predict');
             const data = await response.json();
+            
+            if (data.error) {
+                console.error('Prediction error:', data.error);
+                return;
+            }
+            
             this.updateUI(data);
             this.updatePredictionHistory(data);
         } catch (error) {
@@ -18,14 +24,16 @@ class PredictionUpdater {
     }
 
     updatePredictionHistory(data) {
+        if (!data || !data.metadata || !data.metadata.price) return;
+
         // Add new prediction to history
         const prediction = {
             time: new Date(),
-            currentPrice: data.currentPrice,
+            currentPrice: data.metadata.price.close,
             predictedChange: data.predictedChange,
             predictedPrice: data.predictedPrice,
             confidence: data.confidence,
-            signal: data.signal
+            signal: this.generateSignal(data)
         };
 
         this.predictionHistory.unshift(prediction);
@@ -70,35 +78,64 @@ class PredictionUpdater {
     getSignalClass(signal) {
         switch(signal) {
             case 'Strong Buy': return 'strong-buy-row';
-            case 'Buy': return 'buy-row';
+            case 'Weak Buy': return 'buy-row';
             case 'Strong Sell': return 'strong-sell-row';
-            case 'Sell': return 'sell-row';
+            case 'Weak Sell': return 'sell-row';
             case 'Low Confidence': return 'low-confidence-row';
             default: return 'neutral-row';
         }
     }
 
+    generateSignal(data) {
+        if (data.confidence < 60) {
+            return 'Low Confidence';
+        }
+        
+        if (data.predictedChange > 1.5) {
+            return 'Strong Buy';
+        } else if (data.predictedChange > 0.5) {
+            return 'Weak Buy';
+        } else if (data.predictedChange < -1.5) {
+            return 'Strong Sell';
+        } else if (data.predictedChange < -0.5) {
+            return 'Weak Sell';
+        }
+        
+        return 'Neutral';
+    }
+
     updateUI(data) {
+        if (!data || !data.metadata || !data.metadata.price) {
+            console.error('Invalid prediction data structure');
+            return;
+        }
+
+        const { metadata } = data;
+        
         // Update price information
-        this.updateElement('current-price', `$${data.currentPrice.toFixed(2)}`);
+        this.updateElement('current-price', `$${metadata.price.close.toFixed(2)}`);
         this.updateElement('predicted-change', `${data.predictedChange.toFixed(2)}%`);
         this.updateElement('predicted-price', `$${data.predictedPrice.toFixed(2)}`);
         this.updateElement('confidence', `${data.confidence.toFixed(1)}%`);
-        this.updateElement('rsi', data.rsi.toFixed(1));
+        this.updateElement('rsi', metadata.indicators.rsi.toFixed(1));
         
         // Update market statistics
+        const priceChange = ((metadata.price.close - metadata.price.open) / metadata.price.open) * 100;
         const priceChangeEl = document.getElementById('price-change');
-        priceChangeEl.textContent = `${data.priceChange24h.toFixed(2)}%`;
-        priceChangeEl.className = `prediction-value ${data.priceChange24h >= 0 ? 'change-positive' : 'change-negative'}`;
+        if (priceChangeEl) {
+            priceChangeEl.textContent = `${priceChange.toFixed(2)}%`;
+            priceChangeEl.className = `prediction-value ${priceChange >= 0 ? 'change-positive' : 'change-negative'}`;
+        }
         
-        this.updateElement('high-price', `$${data.highPrice.toFixed(2)}`);
-        this.updateElement('low-price', `$${data.lowPrice.toFixed(2)}`);
+        this.updateElement('high-price', `$${metadata.price.high.toFixed(2)}`);
+        this.updateElement('low-price', `$${metadata.price.low.toFixed(2)}`);
         
         // Update signal
-        this.updateSignal(data.signal);
+        const signal = this.generateSignal(data);
+        this.updateSignal(signal);
 
         // Update risk assessment
-        this.updateRiskAssessment(data);
+        this.updateRiskAssessment(metadata);
 
         // Update timestamp
         this.updateElement('last-update', new Date().toLocaleTimeString());
@@ -116,51 +153,38 @@ class PredictionUpdater {
         if (!signalElement) return;
 
         signalElement.className = 'signal';
-        switch(signal) {
-            case 'Strong Buy':
-                signalElement.textContent = 'Strong Buy';
-                signalElement.classList.add('strong-buy');
-                break;
-            case 'Buy':
-                signalElement.textContent = 'Buy';
-                signalElement.classList.add('buy');
-                break;
-            case 'Strong Sell':
-                signalElement.textContent = 'Strong Sell';
-                signalElement.classList.add('strong-sell');
-                break;
-            case 'Sell':
-                signalElement.textContent = 'Sell';
-                signalElement.classList.add('sell');
-                break;
-            case 'Low Confidence':
-                signalElement.textContent = 'Low Confidence';
-                signalElement.classList.add('low-confidence');
-                break;
-            default:
-                signalElement.textContent = 'Neutral';
-                signalElement.classList.add('neutral');
-        }
+        signalElement.textContent = signal;
+        signalElement.classList.add(signal.toLowerCase().replace(' ', '-'));
     }
 
-    updateRiskAssessment(data) {
+    updateRiskAssessment(metadata) {
         const riskItems = document.getElementById('risk-items');
         if (!riskItems) return;
 
         riskItems.innerHTML = '';
         
-        if (data.volatility > 2) {
-            this.addRiskItem(riskItems, 
-                `High market volatility (${data.volatility.toFixed(1)}%) - Exercise caution`
+        if (!metadata.analysis) return;
+
+        // Add risk items based on analysis
+        if (metadata.analysis.riskLevel > 0.7) {
+            this.addRiskItem(riskItems, 'High risk conditions - Exercise extreme caution');
+        } else if (metadata.analysis.riskLevel > 0.5) {
+            this.addRiskItem(riskItems, 'Moderate risk conditions - Trade with caution');
+        }
+
+        if (metadata.analysis.trend === 'overbought') {
+            this.addRiskItem(riskItems,
+                `Overbought conditions (RSI: ${metadata.indicators.rsi.toFixed(1)}) - Potential reversal risk`
+            );
+        } else if (metadata.analysis.trend === 'oversold') {
+            this.addRiskItem(riskItems,
+                `Oversold conditions (RSI: ${metadata.indicators.rsi.toFixed(1)}) - Potential reversal risk`
             );
         }
-        if (data.rsi > 70) {
-            this.addRiskItem(riskItems,
-                `Overbought conditions (RSI: ${data.rsi.toFixed(1)}) - Potential reversal risk`
-            );
-        } else if (data.rsi < 30) {
-            this.addRiskItem(riskItems,
-                `Oversold conditions (RSI: ${data.rsi.toFixed(1)}) - Potential reversal risk`
+
+        if (metadata.analysis.volatility > 0.02) {
+            this.addRiskItem(riskItems, 
+                `High market volatility (${(metadata.analysis.volatility * 100).toFixed(1)}%) - Exercise caution`
             );
         }
     }

@@ -17,46 +17,68 @@ app.get('/predict', async (req, res) => {
     try {
         const prediction = await makePrediction();
         
+        // Validate prediction data
+        if (!prediction || !prediction.metadata) {
+            throw new Error('Invalid prediction data: missing metadata');
+        }
+
+        // Ensure all required metadata exists
+        const { metadata } = prediction;
+        if (!metadata.price || !metadata.indicators || !metadata.analysis) {
+            console.error('Invalid metadata structure:', metadata);
+            throw new Error('Invalid metadata structure');
+        }
+
         // Format the prediction data for the frontend
         const response = {
-            currentPrice: prediction.currentPrice,
             predictedChange: prediction.predictedChange,
             predictedPrice: prediction.predictedPrice,
             confidence: prediction.confidence,
-            rsi: prediction.rsi,
-            volatility: prediction.volatility * 100, // Convert to percentage
-            priceChange24h: prediction.priceChange24h,
-            highPrice: prediction.highPrice,
-            lowPrice: prediction.lowPrice,
-            signal: getSignal(prediction.predictedChange, prediction.confidence)
+            metadata: {
+                price: {
+                    open: metadata.price.open || 0,
+                    high: metadata.price.high || 0,
+                    low: metadata.price.low || 0,
+                    close: metadata.price.close || 0
+                },
+                indicators: {
+                    rsi: metadata.indicators.rsi || 50,
+                    momentum: metadata.indicators.momentum || 0,
+                    macd: metadata.indicators.macd || 0,
+                    roc: metadata.indicators.roc || 0,
+                    bBands: metadata.indicators.bBands || null
+                },
+                analysis: {
+                    trend: metadata.analysis.trend || 'neutral',
+                    strength: metadata.analysis.strength || 'moderate',
+                    volatility: metadata.analysis.volatility || 0,
+                    riskLevel: metadata.analysis.riskLevel || 0.5
+                }
+            }
         };
+
+        // Log the response for debugging
+        console.log('Sending prediction response:', JSON.stringify(response, null, 2));
 
         res.json(response);
     } catch (error) {
         console.error('Error making prediction:', error);
+        console.error('Error stack:', error.stack);
         res.status(500).json({ 
             error: 'Failed to make prediction',
-            message: error.message 
+            message: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 });
-
-// Helper function to determine trading signal
-function getSignal(predictedChange, confidence) {
-    if (confidence < 60) return 'Low Confidence';
-    if (predictedChange > 1.5) return 'Strong Buy';
-    if (predictedChange > 0.5) return 'Buy';
-    if (predictedChange < -1.5) return 'Strong Sell';
-    if (predictedChange < -0.5) return 'Sell';
-    return 'Neutral';
-}
 
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Server error:', err);
     res.status(500).json({ 
         error: 'Internal server error',
-        message: err.message 
+        message: err.message,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
 });
 

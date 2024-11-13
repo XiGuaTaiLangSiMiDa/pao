@@ -2,8 +2,7 @@ import { fetchKlines } from './data/fetcher.js';
 import { 
     generateTrainingData,
     generatePredictionData,
-    WindowConfig,
-    generateMetadata
+    WindowConfig
 } from './data/features/index.js';
 
 export async function fetchTrainingData({
@@ -51,9 +50,23 @@ export async function fetchPredictionData({
         });
         console.log(`Fetched ${klines.length} klines`);
 
+        if (!klines || klines.length < lookback + 1) {
+            throw new Error(`Insufficient kline data: need at least ${lookback + 1} klines, got ${klines?.length}`);
+        }
+
         console.log('Generating prediction features...');
         const result = generatePredictionData(klines, lookback);
-        console.log('Features generated for current k-bar');
+        
+        // Validate prediction data
+        if (!result || !result.features || !result.metadata) {
+            throw new Error('Invalid prediction data generated');
+        }
+
+        if (!result.metadata.price || !result.metadata.indicators || !result.metadata.analysis) {
+            throw new Error('Invalid metadata structure in prediction data');
+        }
+
+        console.log('Generated prediction data:', JSON.stringify(result, null, 2));
 
         return {
             ...result,
@@ -80,6 +93,10 @@ export function validatePredictionResult(result) {
     
     if (!Array.isArray(features[0]) || features[0].length !== WindowConfig.DEFAULT_LOOKBACK) {
         throw new Error(`Invalid feature window size: ${features[0]?.length}`);
+    }
+
+    if (!metadata.price || !metadata.indicators || !metadata.analysis) {
+        throw new Error('Invalid metadata structure in prediction result');
     }
 
     return true;
