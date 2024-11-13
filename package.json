@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node src/server.js",
     "train": "node src/train.js",
-    "predict": "node src/predict.js"
+    "predict": "node src/predict.js",
+    "cache:init": "node src/scripts/initializeCache.js",
+    "cache:update": "node src/scripts/updateCache.js"
   },
   "dependencies": {
     "@tensorflow/tfjs-node": "^4.17.0",

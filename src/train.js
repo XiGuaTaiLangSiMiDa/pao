@@ -1,17 +1,25 @@
 import * as tf from '@tensorflow/tfjs-node';
-import { fetchKlines, prepareTrainingData } from './utils/dataFetcher.js';
+import { prepareTrainingData } from './utils/dataFetcher.js';
 import { HYPERPARAMETERS } from './hyperparameters.js';
 import { gridSearch } from './utils/gridSearch.js';
 import { preprocessFeatures, preprocessLabels } from './utils/preprocessing.js';
+import { klineCache } from './utils/cache/cache.js';
+import moment from 'moment';
 import fs from 'fs';
 
 async function trainModel() {
   try {
-    console.log('Fetching historical data...');
-    const klines = await fetchKlines({
-      interval: '15m',
-      limit: 1500
-    });
+    const symbol = 'SOLUSDT';
+
+    // Update cache before training
+    console.log('Updating kline cache...');
+    const klines = await klineCache.update(symbol);
+    console.log(`Using ${klines.length} klines from cache for training`);
+    console.log('Data range:', 
+      moment(klines[0].openTime).format('YYYY-MM-DD HH:mm:ss'),
+      'to',
+      moment(klines[klines.length - 1].openTime).format('YYYY-MM-DD HH:mm:ss')
+    );
 
     console.log(`Preparing training data... ${klines.length}`);
     const { features, labels } = prepareTrainingData(klines, HYPERPARAMETERS.lookbackWindow);
@@ -39,6 +47,13 @@ async function trainModel() {
         bestParameters: bestParams,
         bestScore,
         allResults,
+        dataInfo: {
+          totalKlines: klines.length,
+          dateRange: {
+            start: moment(klines[0].openTime).format('YYYY-MM-DD HH:mm:ss'),
+            end: moment(klines[klines.length - 1].openTime).format('YYYY-MM-DD HH:mm:ss')
+          }
+        },
         timestamp: new Date().toISOString()
       }, null, 2)
     );
@@ -54,6 +69,11 @@ async function trainModel() {
     console.log('\nTraining completed successfully!');
     console.log('Best parameters:', bestParams);
     console.log('Best score:', bestScore);
+    console.log('Data range used:', 
+      moment(klines[0].openTime).format('YYYY-MM-DD HH:mm:ss'),
+      'to',
+      moment(klines[klines.length - 1].openTime).format('YYYY-MM-DD HH:mm:ss')
+    );
 
   } catch (error) {
     console.error('Error during training:', error);
