@@ -1,7 +1,8 @@
 import axios from 'axios';
 import moment from 'moment';
 
-const BINANCE_API_BASE = 'https://fapi.binance.com/fapi/v1';
+// const BINANCE_API_BASE = 'https://fapi.binance.com/fapi/v1';
+const BINANCE_API_BASE = 'https://api.binance.com/api/v3';
 
 // Data validation function
 function validateKlineData(kline) {
