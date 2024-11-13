@@ -4,7 +4,7 @@ export const HYPERPARAMETERS = {
   featureSize: 16,  // Updated to match new feature set (price patterns + volume patterns + technical indicators)
   
   // Training parameters
-  epochs: 200,
+  epochs: 100,
   validationSplit: 0.2,
   patience: 15,
   
