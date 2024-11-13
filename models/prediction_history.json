@@ -1,10 +1,14 @@
 [
   {
-    "timestamp": 1731464891235,
-    "currentPrice": 206.47,
-    "predictedChange": 0.14988791942596436,
-    "confidence": 72.11774965180005,
-    "volatility": 0.006528456979470371,
-    "rsi": 37.8858024691358
+    "timestamp": 1731465490847,
+    "currentPrice": 205.36,
+    "predictedChange": 0.1506979763507843,
+    "predictedPrice": 205.669473364234,
+    "confidence": 72.12956708287562,
+    "volatility": 0.0065451281193070945,
+    "rsi": 34.85995457986371,
+    "priceChange24h": -3.7495313085864264,
+    "highPrice": 215.71,
+    "lowPrice": 204.52
   }
 ]

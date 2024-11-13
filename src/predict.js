@@ -19,7 +19,7 @@ async function loadModel() {
   }
 }
 
-async function makePrediction() {
+export async function makePrediction() {
   try {
     const model = await loadModel();
 
@@ -83,14 +83,26 @@ async function makePrediction() {
     preprocessedFeatures.dispose();
     prediction.dispose();
 
+    // Calculate predicted price
+    const predictedPrice = currentPrice * (1 + predictedChange[0]/100);
+
+    // Calculate market statistics
+    const priceChange24h = ((currentPrice - prices[0]) / prices[0] * 100);
+    const highPrice = Math.max(...klines.map(k => k.high));
+    const lowPrice = Math.min(...klines.map(k => k.low));
+
     // Save prediction to history
     const predictionRecord = {
       timestamp: Date.now(),
       currentPrice,
       predictedChange: predictedChange[0],
+      predictedPrice,
       confidence,
       volatility,
-      rsi
+      rsi,
+      priceChange24h,
+      highPrice,
+      lowPrice
     };
     fs.writeFileSync(PREDICTION_HISTORY_FILE, JSON.stringify([predictionRecord], null, 2));
 
@@ -103,15 +115,11 @@ async function makePrediction() {
     console.log('\nPrediction Results:');
     console.log('Predicted 1h Price Change:', predictedChange[0].toFixed(2) + '%');
     console.log('Prediction Confidence:', confidence.toFixed(2) + '%');
-    console.log('Predicted Price in 1h:', (currentPrice * (1 + predictedChange[0]/100)).toFixed(2), 'USDT');
+    console.log('Predicted Price in 1h:', predictedPrice.toFixed(2), 'USDT');
     
     // Market statistics
-    const priceChange24h = ((currentPrice - prices[0]) / prices[0] * 100).toFixed(2);
-    const highPrice = Math.max(...klines.map(k => k.high));
-    const lowPrice = Math.min(...klines.map(k => k.low));
-    
     console.log('\nMarket Statistics (Last 5h):');
-    console.log('Price Change:', priceChange24h + '%');
+    console.log('Price Change:', priceChange24h.toFixed(2) + '%');
     console.log('Highest Price:', highPrice.toFixed(2), 'USDT');
     console.log('Lowest Price:', lowPrice.toFixed(2), 'USDT');
     
@@ -144,6 +152,8 @@ async function makePrediction() {
       console.log('⚠️ Oversold conditions - Potential reversal risk');
     }
 
+    return predictionRecord;
+
   } catch (error) {
     console.error('Error making prediction:', error);
     console.error('Error stack:', error.stack);
@@ -151,6 +161,7 @@ async function makePrediction() {
       console.error('Tensor shape error. Please check the input data format.');
       console.error('Expected shape: [null,20,16]');
     }
+    throw error;
   }
 }
 
