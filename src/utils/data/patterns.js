@@ -1,23 +1,25 @@
 // Calculate price patterns with safety checks
 export function calculatePricePatterns(kline, prevKline) {
-    if (!prevKline) return null;
+    if (!prevKline || !kline) return null;
 
     const { open, high, low, close } = kline;
     const prevClose = prevKline.close;
     
-    if (!isFinite(open) || !isFinite(high) || !isFinite(low) || !isFinite(close) || !isFinite(prevClose)) {
+    if (!isValidNumber(open) || !isValidNumber(high) || 
+        !isValidNumber(low) || !isValidNumber(close) || 
+        !isValidNumber(prevClose)) {
         return null;
     }
 
     // Calculate normalized price movements
-    const bodySize = Math.abs(close - open) / (open || 1);
-    const upperShadow = (high - Math.max(open, close)) / (open || 1);
-    const lowerShadow = (Math.min(open, close) - low) / (open || 1);
-    const totalRange = (high - low) / (open || 1);
+    const bodySize = open !== 0 ? Math.abs(close - open) / open : 0;
+    const upperShadow = open !== 0 ? (high - Math.max(open, close)) / open : 0;
+    const lowerShadow = open !== 0 ? (Math.min(open, close) - low) / open : 0;
+    const totalRange = open !== 0 ? (high - low) / open : 0;
     
     // Calculate price momentum
-    const priceChange = (close - prevClose) / (prevClose || 1);
-    const gapUp = (open - prevClose) / (prevClose || 1);
+    const priceChange = prevClose !== 0 ? (close - prevClose) / prevClose : 0;
+    const gapUp = prevClose !== 0 ? (open - prevClose) / prevClose : 0;
     
     // Calculate volatility patterns
     const avgPrice = (high + low) / 2;
@@ -25,25 +27,26 @@ export function calculatePricePatterns(kline, prevKline) {
     const bodyToShadowRatio = totalRange !== 0 ? bodySize / totalRange : 0;
     
     return {
-        bodySize,
-        upperShadow,
-        lowerShadow,
-        totalRange,
-        priceChange,
-        gapUp,
-        volatility,
-        bodyToShadowRatio
+        bodySize: clipValue(bodySize),
+        upperShadow: clipValue(upperShadow),
+        lowerShadow: clipValue(lowerShadow),
+        totalRange: clipValue(totalRange),
+        priceChange: clipValue(priceChange),
+        gapUp: clipValue(gapUp),
+        volatility: clipValue(volatility),
+        bodyToShadowRatio: clipValue(bodyToShadowRatio)
     };
 }
 
 // Calculate volume patterns with safety checks
 export function calculateVolumePatterns(kline, prevKline) {
-    if (!prevKline) return null;
+    if (!prevKline || !kline) return null;
 
     const { volume, close, open } = kline;
     const prevVolume = prevKline.volume;
     
-    if (!isFinite(volume) || !isFinite(close) || !isFinite(open) || !isFinite(prevVolume)) {
+    if (!isValidNumber(volume) || !isValidNumber(close) || 
+        !isValidNumber(open) || !isValidNumber(prevVolume)) {
         return null;
     }
 
@@ -55,9 +58,9 @@ export function calculateVolumePatterns(kline, prevKline) {
     const volumeTrend = volume * (close > open ? 1 : -1);
     
     return {
-        volumeChange,
-        volumePriceRatio,
-        volumeTrend
+        volumeChange: clipValue(volumeChange),
+        volumePriceRatio: clipValue(volumePriceRatio / (prevVolume || 1)),
+        volumeTrend: clipValue(volumeTrend / (prevVolume || 1))
     };
 }
 
@@ -69,6 +72,7 @@ export function validateFeatureSet(features, index) {
     
     features.forEach((value, j) => {
         if (!isValidFeatureValue(value)) {
+            console.error(`Invalid feature at position ${index},${j}:`, value);
             throw new Error(`Invalid feature value at position ${index},${j}: ${value}`);
         }
     });
@@ -98,6 +102,7 @@ export function validateKlineData(klines, lookback) {
 function isValidFeatureValue(value) {
     return typeof value === 'number' && 
            isFinite(value) && 
+           !isNaN(value) &&
            value >= -1 && 
            value <= 1;
 }
@@ -107,4 +112,15 @@ function isValidKlineField(value) {
            value !== null && 
            !isNaN(value) && 
            isFinite(value);
+}
+
+function isValidNumber(value) {
+    return typeof value === 'number' && 
+           !isNaN(value) && 
+           isFinite(value);
+}
+
+function clipValue(value, min = -1, max = 1) {
+    if (!isValidNumber(value)) return 0;
+    return Math.min(Math.max(value, min), max);
 }
