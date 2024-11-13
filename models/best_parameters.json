@@ -6,10 +6,10 @@
       64,
       32
     ],
-    "dropoutRate": 0.15,
-    "l2Regularization": 0.00001
+    "dropoutRate": 0.2,
+    "l2Regularization": 0.00005
   },
-  "score": 0.19298305527607287,
+  "score": 0.19284019737516722,
   "hyperparameters": {
     "lookbackWindow": 20,
     "featureSize": 16,
@@ -53,5 +53,5 @@
       ]
     }
   },
-  "timestamp": "2024-11-13T10:27:21.634Z"
+  "timestamp": "2024-11-13T10:35:43.675Z"
 }
