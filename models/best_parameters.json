@@ -1,57 +1,106 @@
 {
   "parameters": {
-    "batchSize": 32,
-    "learningRate": 0.001,
     "lstmUnits": [
-      128,
-      64
+      64,
+      32
     ],
-    "dropoutRate": 0.2,
-    "l2Regularization": 0.00001
+    "dropoutRate": 0.3,
+    "l2Regularization": 0.0001,
+    "learningRate": 0.0003
   },
-  "score": 0.18669918763321053,
+  "variant": "full",
+  "score": 14.23380313553133,
   "hyperparameters": {
     "lookbackWindow": 20,
     "featureSize": 16,
-    "epochs": 50,
+    "batchSize": 32,
     "validationSplit": 0.2,
-    "patience": 15,
-    "searchSpace": {
-      "batchSize": [
-        32,
-        64,
-        128
-      ],
-      "learningRate": [
-        0.001,
-        0.0005,
-        0.0001
-      ],
+    "modelParams": {
       "lstmUnits": [
         [
           64,
           32
         ],
         [
-          96,
-          48
-        ],
-        [
           128,
           64
+        ],
+        [
+          256,
+          128
         ]
       ],
       "dropoutRate": [
-        0.1,
-        0.15,
-        0.2
+        0.2,
+        0.3,
+        0.4
       ],
       "l2Regularization": [
+        0.000001,
         0.00001,
-        0.00005,
         0.0001
+      ],
+      "learningRate": [
+        0.0001,
+        0.0003,
+        0.001
       ]
+    },
+    "epochs": 1,
+    "earlyStoppingPatience": 15,
+    "reduceLRPatience": 8,
+    "reduceLRFactor": 0.5,
+    "minLR": 0.000001,
+    "LR_SCHEDULE": {
+      "initialLR": 0.001,
+      "decay": 0.1,
+      "decaySteps": 1000,
+      "warmupSteps": 5,
+      "minLR": 0.000001
+    },
+    "MODEL_VARIANTS": {
+      "simple": {
+        "useBidirectional": true,
+        "useAttention": false,
+        "useResidual": false
+      },
+      "attention": {
+        "useBidirectional": true,
+        "useAttention": true,
+        "useResidual": false
+      },
+      "full": {
+        "useBidirectional": true,
+        "useAttention": true,
+        "useResidual": true
+      }
+    },
+    "attention": {
+      "numHeads": 4,
+      "keyDim": 32,
+      "valueDim": 32,
+      "dropout": 0.1
+    },
+    "residual": {
+      "numBlocks": 2,
+      "dropoutRate": 0.2,
+      "useLayerNorm": true
+    },
+    "training": {
+      "useAMP": true,
+      "gradientClipping": 0.5,
+      "warmupEpochs": 5,
+      "labelSmoothing": 0.1,
+      "weightDecay": 0.01
+    },
+    "metrics": {
+      "primary": "mae",
+      "secondary": [
+        "mse",
+        "huber"
+      ],
+      "threshold": 0.02
     }
   },
-  "timestamp": "2024-11-13T18:02:25.754Z"
+  "timestamp": "2024-11-14T02:47:50.015Z"
 }

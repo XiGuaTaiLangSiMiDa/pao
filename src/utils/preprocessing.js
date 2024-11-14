@@ -1,149 +1,169 @@
 import * as tf from '@tensorflow/tfjs-node';
 
-export class MinMaxScaler {
-  constructor() {
-    this.min = null;
-    this.max = null;
-  }
+// Preprocess features
+export async function preprocessFeatures(features) {
+    return tf.tidy(() => {
+        const tensor = tf.tensor3d(features);
+        return normalizeFeatures(tensor);
+    });
+}
 
-  fit(data) {
-    // Calculate min and max for each feature
-    this.min = tf.min(data, 0);
-    this.max = tf.max(data, 0);
+// Preprocess labels
+export async function preprocessLabels(labels) {
+    return tf.tidy(() => {
+        const tensor = tf.tensor1d(labels);
+        return tensor;
+    });
+}
+
+// Normalize features using standardization
+function normalizeFeatures(tensor) {
+    return tf.tidy(() => {
+        const mean = tensor.mean(0, true);
+        const std = tensor.sub(mean).square().mean(0, true).sqrt();
+        // Add small epsilon to avoid division by zero
+        return tensor.sub(mean).div(std.add(1e-8));
+    });
+}
+
+// Data augmentation techniques for time series
+export async function augmentData(features, labels, config) {
+    const augmentedFeatures = [...features];
+    const augmentedLabels = [...labels];
+
+    for (let i = 0; i < features.length; i++) {
+        if (Math.random() < config.probability) {
+            for (const method of config.methods) {
+                switch (method) {
+                    case 'jitter':
+                        const jittered = addJitter(features[i]);
+                        augmentedFeatures.push(jittered);
+                        augmentedLabels.push(labels[i]);
+                        break;
+                    case 'scaling':
+                        const scaled = applyScaling(features[i]);
+                        augmentedFeatures.push(scaled);
+                        augmentedLabels.push(labels[i]);
+                        break;
+                    case 'timeWarp':
+                        const warped = applyTimeWarp(features[i]);
+                        augmentedFeatures.push(warped);
+                        augmentedLabels.push(labels[i]);
+                        break;
+                }
+            }
+        }
+    }
+
+    return {
+        features: augmentedFeatures,
+        labels: augmentedLabels
+    };
+}
+
+// Add random noise to the time series
+function addJitter(window, sigma = 0.05) {
+    return window.map(timestep => 
+        timestep.map(feature => {
+            const noise = (Math.random() - 0.5) * 2 * sigma;
+            return feature * (1 + noise);
+        })
+    );
+}
+
+// Apply random scaling to the time series
+function applyScaling(window, scalingFactor = 0.2) {
+    const scale = 1 + (Math.random() - 0.5) * 2 * scalingFactor;
+    return window.map(timestep =>
+        timestep.map(feature => feature * scale)
+    );
+}
+
+// Apply time warping to the time series
+function applyTimeWarp(window, warpingFactor = 0.2) {
+    const warped = [];
+    const length = window.length;
     
-    // Log statistics
-    console.log('Data statistics:');
-    console.log('Min values:', this.min.arraySync());
-    console.log('Max values:', this.max.arraySync());
-  }
-
-  transform(data) {
-    if (!this.min || !this.max) {
-      throw new Error('Scaler must be fitted before transform');
+    for (let i = 0; i < length; i++) {
+        // Calculate warped index
+        const warp = Math.sin(i / length * Math.PI * 2) * warpingFactor;
+        const warpedIndex = Math.min(
+            Math.max(
+                Math.round(i + warp * length),
+                0
+            ),
+            length - 1
+        );
+        warped.push([...window[warpedIndex]]);
     }
     
-    // Add larger epsilon to avoid numerical instability
-    const epsilon = 1e-6;
-    const denominator = tf.add(tf.sub(this.max, this.min), epsilon);
-    
-    // Check for very small denominators
-    const smallDenominators = tf.less(denominator, epsilon);
-    const safeDenominator = tf.where(smallDenominators, tf.onesLike(denominator), denominator);
-    
-    const normalized = tf.div(tf.sub(data, this.min), safeDenominator);
-    
-    // Clip values to [0, 1] range
-    const clipped = tf.clipByValue(normalized, 0, 1);
-    
-    return clipped;
-  }
-
-  fitTransform(data) {
-    this.fit(data);
-    return this.transform(data);
-  }
-
-  dispose() {
-    if (this.min) this.min.dispose();
-    if (this.max) this.max.dispose();
-  }
+    return warped;
 }
 
-function cleanData(tensor) {
-  // Replace NaN and Inf values with 0
-  const cleaned = tf.where(
-    tf.logicalOr(tf.isNaN(tensor), tf.isInf(tensor)),
-    tf.zerosLike(tensor),
-    tensor
-  );
-  
-  // Clip extreme values to reasonable range
-  return tf.clipByValue(cleaned, -1e6, 1e6);
+// Magnitude warping
+function applyMagnitudeWarp(window, sigma = 0.2) {
+    const length = window.length;
+    const numFeatures = window[0].length;
+    const warped = Array(length).fill().map(() => Array(numFeatures).fill(0));
+    
+    // Generate smooth noise using sine waves
+    for (let feature = 0; feature < numFeatures; feature++) {
+        const amplitude = (Math.random() - 0.5) * 2 * sigma;
+        const phase = Math.random() * Math.PI * 2;
+        const frequency = 1 + Math.random();
+        
+        for (let i = 0; i < length; i++) {
+            const noise = 1 + amplitude * Math.sin(frequency * i / length * Math.PI * 2 + phase);
+            warped[i][feature] = window[i][feature] * noise;
+        }
+    }
+    
+    return warped;
 }
 
-function validateData(tensor, name) {
-  // Clean data first
-  const cleanedTensor = cleanData(tensor);
-  
-  const stats = {
-    min: tf.min(cleanedTensor).arraySync(),
-    max: tf.max(cleanedTensor).arraySync(),
-    mean: tf.mean(cleanedTensor).arraySync(),
-    variance: tf.moments(cleanedTensor).variance.arraySync()
-  };
-  
-  console.log(`\n${name} statistics:`);
-  console.log(stats);
-  
-  // Check remaining invalid values after cleaning
-  const nanCount = tf.sum(tf.isNaN(cleanedTensor)).arraySync();
-  const infCount = tf.sum(tf.isInf(cleanedTensor)).arraySync();
-  
-  if (nanCount > 0 || infCount > 0) {
-    console.error(`Warning: Found ${nanCount} NaN and ${infCount} Inf values after cleaning`);
-  }
-  
-  return { cleanedTensor, stats };
+// Window slicing
+function applyWindowSlicing(window, sliceRatio = 0.9) {
+    const length = window.length;
+    const sliceLength = Math.floor(length * sliceRatio);
+    const start = Math.floor(Math.random() * (length - sliceLength));
+    
+    return window.slice(start, start + sliceLength).map(timestep => [...timestep]);
 }
 
-export function preprocessFeatures(features) {
-  try {
-    console.log('\nPreprocessing features...');
-    const featuresTensor = tf.tensor3d(features);
-    
-    // Validate and clean raw features
-    const { cleanedTensor: cleanedFeatures } = validateData(featuresTensor, 'Raw features');
-    
-    // Reshape to 2D for normalization
-    const shape = cleanedFeatures.shape;
-    const flattenedFeatures = cleanedFeatures.reshape([
-      shape[0] * shape[1],
-      shape[2]
-    ]);
-    
-    // Normalize features
-    const scaler = new MinMaxScaler();
-    const normalizedFeatures = scaler.fitTransform(flattenedFeatures);
-    validateData(normalizedFeatures, 'Normalized features');
-
-    // Reshape back to 3D
-    const preprocessedFeatures = normalizedFeatures.reshape(shape);
-    validateData(preprocessedFeatures, 'Final features');
-
-    // Clean up
-    featuresTensor.dispose();
-    cleanedFeatures.dispose();
-    flattenedFeatures.dispose();
-    scaler.dispose();
-
-    return preprocessedFeatures;
-  } catch (error) {
-    console.error('Error in preprocessing features:', error);
-    throw error;
-  }
+// Window mixing
+function mixWindows(window1, window2, mixingRatio = 0.5) {
+    return window1.map((timestep, i) =>
+        timestep.map((feature, j) =>
+            feature * mixingRatio + window2[i][j] * (1 - mixingRatio)
+        )
+    );
 }
 
-export function preprocessLabels(labels) {
-  try {
-    console.log('\nPreprocessing labels...');
-    const labelsTensor = tf.tensor1d(labels);
+// Validate augmented data
+function validateAugmentedData(original, augmented) {
+    // Check shapes
+    if (augmented.length < original.length) {
+        throw new Error('Augmented data size is smaller than original data');
+    }
     
-    // Validate and clean raw labels
-    const { cleanedTensor: cleanedLabels } = validateData(labelsTensor, 'Raw labels');
+    // Check feature dimensions
+    const originalShape = original[0].length;
+    for (const window of augmented) {
+        if (window.length !== originalShape) {
+            throw new Error('Augmented data has inconsistent feature dimensions');
+        }
+    }
     
-    // Normalize labels using min-max scaling
-    const scaler = new MinMaxScaler();
-    const normalizedLabels = scaler.fitTransform(cleanedLabels.expandDims(1)).squeeze();
-    validateData(normalizedLabels, 'Normalized labels');
-
-    // Clean up
-    labelsTensor.dispose();
-    cleanedLabels.dispose();
-    scaler.dispose();
-
-    return normalizedLabels;
-  } catch (error) {
-    console.error('Error in preprocessing labels:', error);
-    throw error;
-  }
+    // Check for NaN or Infinity values
+    for (const window of augmented) {
+        for (const timestep of window) {
+            for (const feature of timestep) {
+                if (!isFinite(feature)) {
+                    throw new Error('Augmented data contains invalid values');
+                }
+            }
+        }
+    }
+    
+    return true;
 }
