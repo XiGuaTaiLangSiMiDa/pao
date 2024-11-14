@@ -18,7 +18,7 @@ export const HYPERPARAMETERS = {
     },
 
     // Training parameters
-    epochs: 1,
+    epochs: 100,
     earlyStoppingPatience: 15,
     reduceLRPatience: 8,
     reduceLRFactor: 0.5,
