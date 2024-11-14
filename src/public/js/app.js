@@ -163,6 +163,21 @@ class PredictionUpdater {
         const signal = this.generateSignal(data);
         this.updateSignal(signal);
 
+        // Update trend and strength with data attributes
+        if (metadata.analysis) {
+            const trendEl = document.getElementById('trend');
+            if (trendEl) {
+                trendEl.textContent = metadata.analysis.trend || '-';
+                trendEl.setAttribute('data-value', metadata.analysis.trend || '');
+            }
+
+            const strengthEl = document.getElementById('strength');
+            if (strengthEl) {
+                strengthEl.textContent = metadata.analysis.strength || '-';
+                strengthEl.setAttribute('data-value', metadata.analysis.strength || '');
+            }
+        }
+
         // Update risk assessment
         this.updateRiskAssessment(metadata);
 
