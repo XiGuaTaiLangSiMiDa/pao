@@ -56,6 +56,48 @@ h1 {
     color: #333;
 }
 
+/* Trend styles */
+#trend {
+    text-transform: capitalize;
+}
+
+#trend[data-value="uptrend"] {
+    color: #4CAF50;
+}
+
+#trend[data-value="downtrend"] {
+    color: #f44336;
+}
+
+#trend[data-value="neutral"] {
+    color: #9E9E9E;
+}
+
+#trend[data-value="overbought"] {
+    color: #E91E63;
+}
+
+#trend[data-value="oversold"] {
+    color: #2196F3;
+}
+
+/* Strength styles */
+#strength {
+    text-transform: capitalize;
+}
+
+#strength[data-value="strong"] {
+    color: #4CAF50;
+}
+
+#strength[data-value="moderate"] {
+    color: #FF9800;
+}
+
+#strength[data-value="weak"] {
+    color: #f44336;
+}
+
 .signal {
     font-size: 1.2em;
     font-weight: bold;
