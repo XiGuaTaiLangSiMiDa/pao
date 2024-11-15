@@ -9,9 +9,11 @@ export function generateTrainingData(klines, lookback = WindowConfig.DEFAULT_LOO
     // Validate input data
     validateKlineData(klines, lookback);
 
+    // Extract all required price data
+    const { closes, highs, lows, volumes } = extractPrices(klines);
+    
     // Calculate indicators once for all windows
-    const { closes, volumes } = extractPrices(klines);
-    const indicators = calculateIndicators(closes, volumes);
+    const indicators = calculateIndicators(closes, volumes, highs, lows);
     
     // Generate feature windows
     const features = generateFeatureWindows(klines, indicators, lookback);

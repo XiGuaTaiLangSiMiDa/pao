@@ -43,8 +43,7 @@ export {
 
 // Re-export base components
 export { 
-    calculateIndicators,
-    getLatestIndicators 
+    calculateIndicators
 } from './base/indicators.js';
 
 export { 

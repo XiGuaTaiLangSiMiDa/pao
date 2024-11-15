@@ -1,30 +1,32 @@
 {
   "parameters": {
     "batchSize": 32,
-    "learningRate": 0.001,
+    "learningRate": 0.0005,
     "lstmUnits": [
       96,
       48
     ],
     "dropoutRate": 0.3,
-    "l2Regularization": 0.0001
+    "l2Regularization": 0.00005
   },
-  "score": 0.031040451359756253,
+  "score": 0.05157945317250238,
   "hyperparameters": {
-    "lookbackWindow": 20,
-    "featureSize": 19,
-    "epochs": 50,
+    "lookbackWindow": 30,
+    "featureSize": 22,
+    "epochs": 100,
     "validationSplit": 0.2,
-    "patience": 15,
+    "patience": 20,
     "searchSpace": {
       "batchSize": [
         32,
-        64
+        64,
+        128
       ],
       "learningRate": [
-        0.001,
         0.0005,
-        0.0001
+        0.0002,
+        0.0001,
+        0.00005
       ],
       "lstmUnits": [
         [
@@ -38,23 +40,80 @@
         [
           128,
           64
+        ],
+        [
+          192,
+          96
         ]
       ],
       "dropoutRate": [
-        0.2,
         0.3,
-        0.4
+        0.4,
+        0.5
       ],
       "l2Regularization": [
-        0.00001,
         0.00005,
-        0.0001
+        0.0001,
+        0.0002
       ]
+    },
+    "featureWeights": {
+      "trend": {
+        "adx": 1.2,
+        "macd": 1.1,
+        "rsi": 0.8,
+        "stochRSI": 0.8
+      },
+      "momentum": {
+        "momentum": 1,
+        "roc": 1,
+        "obv": 1
+      },
+      "volatility": {
+        "atr": 1.1,
+        "bBands": 1
+      },
+      "volume": {
+        "cmf": 1.1,
+        "obv": 1
+      }
+    },
+    "trendThresholds": {
+      "strong": 0.02,
+      "medium": 0.01,
+      "weak": 0.005
     },
     "classWeights": {
       "positive": 1,
-      "negative": 1.1010752688172043
+      "negative": 1.0997830802603037
+    },
+    "earlyStoppingConfig": {
+      "monitor": "val_loss",
+      "minDelta": 0.0001,
+      "patience": 20,
+      "mode": "min",
+      "restoreBestWeights": true
+    },
+    "learningRateSchedule": {
+      "initialLearningRate": 0.0005,
+      "decaySteps": 2000,
+      "decayRate": 0.97,
+      "staircase": false
+    },
+    "gradientClipping": {
+      "clipNorm": 0.5,
+      "clipValue": 0.3
+    },
+    "validationConfig": {
+      "validationSplit": 0.2,
+      "validationFrequency": 1,
+      "validationBatchSize": 32
+    },
+    "predictionConfig": {
+      "ensembleSize": 5,
+      "confidenceThreshold": 0.7,
+      "minTrendStrength": 0.015
     }
   },
-  "timestamp": "2024-11-15T04:32:39.242Z"
+  "timestamp": "2024-11-15T06:22:27.542Z"
 }

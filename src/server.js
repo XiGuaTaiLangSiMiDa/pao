@@ -58,13 +58,22 @@ app.post('/predict', async (req, res) => {
                     momentum: metadata.indicators.momentum || 0,
                     macd: metadata.indicators.macd || 0,
                     roc: metadata.indicators.roc || 0,
-                    bBands: metadata.indicators.bBands || null
+                    bBands: metadata.indicators.bBands || null,
+                    // Add new indicators
+                    adx: metadata.indicators.adx || {
+                        adx: 25,
+                        plusDI: 20,
+                        minusDI: 20
+                    },
+                    atr: metadata.indicators.atr || 0,
+                    cmf: metadata.indicators.cmf || 0
                 },
                 analysis: {
                     trend: metadata.analysis.trend || 'neutral',
                     strength: metadata.analysis.strength || 'moderate',
                     volatility: metadata.analysis.volatility || 0,
-                    riskLevel: metadata.analysis.riskLevel || 0.5
+                    riskLevel: metadata.analysis.riskLevel || 0.5,
+                    signals: metadata.analysis.signals || []
                 }
             }
         };

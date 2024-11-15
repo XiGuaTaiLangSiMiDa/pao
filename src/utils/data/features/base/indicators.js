@@ -24,80 +24,179 @@ export function calculateRSI(prices, period = 14) {
     return rsiValues;
 }
 
-// Calculate Stochastic RSI with improved initialization
+// Calculate Stochastic RSI
 export function calculateStochRSI(prices, period = 14, smoothK = 3, smoothD = 3) {
-    if (prices.length < period * 2) {
-        // Not enough data for calculation
-        return {
-            k: Array(prices.length).fill(null),
-            d: Array(prices.length).fill(null)
-        };
-    }
-
     const rsi = calculateRSI(prices, period);
     const stochRSI = [];
-    
+    const k = [];
+    const d = [];
+
     // Calculate raw K values
     for (let i = period - 1; i < rsi.length; i++) {
         const rsiWindow = rsi.slice(i - period + 1, i + 1);
-        const highestRSI = Math.max(...rsiWindow.filter(v => v !== null));
-        const lowestRSI = Math.min(...rsiWindow.filter(v => v !== null));
+        const highestRSI = Math.max(...rsiWindow);
+        const lowestRSI = Math.min(...rsiWindow);
         
-        let k;
-        if (highestRSI === lowestRSI || !isFinite(highestRSI) || !isFinite(lowestRSI)) {
-            k = rsi[i]; // Use actual RSI value if no range
+        let kValue;
+        if (highestRSI === lowestRSI) {
+            kValue = 50; // Neutral value when no range
         } else {
-            k = ((rsi[i] - lowestRSI) / (highestRSI - lowestRSI)) * 100;
+            kValue = ((rsi[i] - lowestRSI) / (highestRSI - lowestRSI)) * 100;
         }
-            
-        stochRSI.push(k);
+        stochRSI.push(kValue);
     }
 
     // Apply smoothing to K values
-    const smoothedK = [];
     for (let i = smoothK - 1; i < stochRSI.length; i++) {
-        const window = stochRSI.slice(i - smoothK + 1, i + 1);
-        const validValues = window.filter(v => v !== null && isFinite(v));
-        if (validValues.length > 0) {
-            smoothedK.push(validValues.reduce((a, b) => a + b, 0) / validValues.length);
-        } else {
-            smoothedK.push(null);
-        }
+        const kWindow = stochRSI.slice(i - smoothK + 1, i + 1);
+        k.push(kWindow.reduce((a, b) => a + b) / smoothK);
     }
 
-    // Calculate D values (SMA of smoothed K)
-    const smoothedD = [];
-    for (let i = smoothD - 1; i < smoothedK.length; i++) {
-        const window = smoothedK.slice(i - smoothD + 1, i + 1);
-        const validValues = window.filter(v => v !== null && isFinite(v));
-        if (validValues.length > 0) {
-            smoothedD.push(validValues.reduce((a, b) => a + b, 0) / validValues.length);
-        } else {
-            smoothedD.push(null);
-        }
+    // Calculate D values (SMA of K)
+    for (let i = smoothD - 1; i < k.length; i++) {
+        const dWindow = k.slice(i - smoothD + 1, i + 1);
+        d.push(dWindow.reduce((a, b) => a + b) / smoothD);
     }
 
-    // Calculate required padding
-    const kPadding = period - 1 + smoothK - 1;
-    const dPadding = kPadding + smoothD - 1;
-
-    // Use the first valid calculated values for padding
-    const firstValidK = smoothedK.find(v => v !== null && isFinite(v)) || rsi[0];
-    const firstValidD = smoothedD.find(v => v !== null && isFinite(v)) || rsi[0];
+    // Pad arrays to match input length
+    const padding = period - 1 + Math.max(smoothK, smoothD) - 1;
+    const paddedK = Array(padding).fill(50).concat(k);
+    const paddedD = Array(padding).fill(50).concat(d);
 
     return {
-        k: [...Array(kPadding).fill(firstValidK), ...smoothedK],
-        d: [...Array(dPadding).fill(firstValidD), ...smoothedD]
+        k: paddedK,
+        d: paddedD
     };
 }
 
-// Calculate On Balance Volume (OBV) with normalization
+// Calculate Average True Range (ATR)
+export function calculateATR(highs, lows, closes, period = 14) {
+    const trueRanges = [];
+    const atr = [0];  // Initial value
+
+    // Calculate True Range for first period
+    for (let i = 1; i < closes.length; i++) {
+        const high = highs[i];
+        const low = lows[i];
+        const prevClose = closes[i - 1];
+
+        if (!isFinite(high) || !isFinite(low) || !isFinite(prevClose)) {
+            trueRanges.push(0);
+            continue;
+        }
+
+        const tr1 = Math.abs(high - low);
+        const tr2 = Math.abs(high - prevClose);
+        const tr3 = Math.abs(low - prevClose);
+        
+        trueRanges.push(Math.max(tr1, tr2, tr3));
+    }
+
+    // Calculate ATR using Wilder's smoothing
+    let atrValue = trueRanges.slice(0, period).reduce((a, b) => a + b, 0) / period;
+    atr.push(atrValue);
+
+    for (let i = period; i < trueRanges.length; i++) {
+        atrValue = ((atrValue * (period - 1)) + trueRanges[i]) / period;
+        atr.push(atrValue);
+    }
+
+    return atr;
+}
+
+// Calculate Average Directional Index (ADX)
+export function calculateADX(highs, lows, closes, period = 14) {
+    const plusDM = [0];
+    const minusDM = [0];
+    const tr = [0];
+    const adx = Array(period * 2).fill(0);  // Initial values
+
+    // Calculate +DM, -DM and TR
+    for (let i = 1; i < closes.length; i++) {
+        const highDiff = highs[i] - highs[i - 1];
+        const lowDiff = lows[i - 1] - lows[i];
+
+        // +DM
+        plusDM.push(highDiff > lowDiff && highDiff > 0 ? highDiff : 0);
+        // -DM
+        minusDM.push(lowDiff > highDiff && lowDiff > 0 ? lowDiff : 0);
+        
+        // True Range
+        const trueHigh = Math.max(highs[i], closes[i - 1]);
+        const trueLow = Math.min(lows[i], closes[i - 1]);
+        tr.push(trueHigh - trueLow);
+    }
+
+    // Smooth the indicators
+    const smoothPlusDM = getWilderSmoothing(plusDM, period);
+    const smoothMinusDM = getWilderSmoothing(minusDM, period);
+    const smoothTR = getWilderSmoothing(tr, period);
+
+    // Calculate +DI and -DI
+    const plusDI = smoothPlusDM.map((pdm, i) => (pdm / smoothTR[i]) * 100);
+    const minusDI = smoothMinusDM.map((mdm, i) => (mdm / smoothTR[i]) * 100);
+
+    // Calculate DX
+    const dx = plusDI.map((pdi, i) => {
+        const mdi = minusDI[i];
+        return Math.abs(pdi - mdi) / (pdi + mdi) * 100;
+    });
+
+    // Calculate ADX
+    for (let i = period * 2; i < dx.length; i++) {
+        adx.push(
+            (adx[adx.length - 1] * (period - 1) + dx[i]) / period
+        );
+    }
+
+    return {
+        adx,
+        plusDI,
+        minusDI
+    };
+}
+
+// Calculate Chaikin Money Flow (CMF)
+export function calculateCMF(highs, lows, closes, volumes, period = 20) {
+    const cmf = Array(period - 1).fill(0);
+    
+    for (let i = period - 1; i < closes.length; i++) {
+        let moneyFlowVolume = 0;
+        let volumeSum = 0;
+        
+        // Calculate money flow volume for the period
+        for (let j = i - period + 1; j <= i; j++) {
+            const high = highs[j];
+            const low = lows[j];
+            const close = closes[j];
+            const volume = volumes[j];
+            
+            if (!isFinite(high) || !isFinite(low) || !isFinite(close) || !isFinite(volume)) {
+                continue;
+            }
+            
+            const highLowRange = high - low;
+            if (highLowRange === 0) continue;
+            
+            // Money Flow Multiplier
+            const multiplier = ((close - low) - (high - close)) / highLowRange;
+            
+            moneyFlowVolume += multiplier * volume;
+            volumeSum += volume;
+        }
+        
+        cmf.push(volumeSum === 0 ? 0 : moneyFlowVolume / volumeSum);
+    }
+    
+    return cmf;
+}
+
+// Calculate On Balance Volume (OBV)
 export function calculateOBV(prices, volumes) {
     if (!volumes || volumes.length !== prices.length) {
         return Array(prices.length).fill(0);
     }
 
-    // Calculate baseline volume for normalization
     const baselineVolume = volumes.reduce((sum, vol) => sum + (isFinite(vol) ? vol : 0), 0) / volumes.length;
     const obv = [0];
     
@@ -112,8 +211,6 @@ export function calculateOBV(prices, volumes) {
         }
 
         let currentOBV = obv[obv.length - 1];
-        
-        // Normalize volume relative to baseline before adding/subtracting
         const normalizedVolume = (currentVolume / baselineVolume) * 100;
         
         if (currentPrice > previousPrice) {
@@ -125,14 +222,11 @@ export function calculateOBV(prices, volumes) {
         obv.push(currentOBV);
     }
 
-    // Find max absolute value for final normalization
     const maxAbsOBV = Math.max(...obv.map(Math.abs));
-    
-    // Normalize to -100 to 100 range
     return obv.map(value => maxAbsOBV === 0 ? 0 : (value / maxAbsOBV) * 100);
 }
 
-// Calculate MACD with safety checks
+// Calculate MACD
 export function calculateMACD(prices, fastPeriod = 12, slowPeriod = 26, signalPeriod = 9) {
     const ema = (values, period) => {
         const k = 2 / (period + 1);
@@ -156,7 +250,7 @@ export function calculateMACD(prices, fastPeriod = 12, slowPeriod = 26, signalPe
     return { macdLine, signalLine, histogram };
 }
 
-// Calculate momentum with safety checks
+// Calculate momentum
 export function calculateMomentum(prices, period) {
     return prices.map((price, i) => {
         if (i < period) return 0;
@@ -166,7 +260,7 @@ export function calculateMomentum(prices, period) {
     });
 }
 
-// Calculate Rate of Change (ROC) with safety checks
+// Calculate Rate of Change (ROC)
 export function calculateROC(prices, period) {
     return prices.map((price, i) => {
         if (i < period) return 0;
@@ -176,7 +270,7 @@ export function calculateROC(prices, period) {
     });
 }
 
-// Calculate Bollinger Bands with safety checks
+// Calculate Bollinger Bands
 export function calculateBollingerBands(prices, period = 20, stdDev = 2) {
     const results = [];
     
@@ -206,40 +300,80 @@ export function calculateBollingerBands(prices, period = 20, stdDev = 2) {
         });
     }
     
-    // Fill initial values with default values instead of null
-    const defaultBBands = {
+    return Array(period - 1).fill({
         bandwidth: 0,
         percentB: 50,
         deviation: 0
-    };
-    return Array(period - 1).fill(defaultBBands).concat(results);
+    }).concat(results);
 }
 
-// Helper function to get latest indicator values
-export function getLatestIndicators(indicators) {
+// Helper function for Wilder's Smoothing
+function getWilderSmoothing(data, period) {
+    const smoothed = [0];
+    let sum = data.slice(1, period + 1).reduce((a, b) => a + b, 0);
+    
+    smoothed.push(sum / period);
+    
+    for (let i = period + 1; i < data.length; i++) {
+        sum = (sum - (sum / period)) + data[i];
+        smoothed.push(sum / period);
+    }
+    
+    return smoothed;
+}
+
+// Calculate all indicators at once with weights
+export function calculateIndicators(prices, volumes, highs, lows) {
+    const rsi = calculateRSI(prices);
+    const stochRSI = calculateStochRSI(prices);
+    const obv = calculateOBV(prices, volumes);
+    const macd = calculateMACD(prices);
+    const momentum = calculateMomentum(prices, 10);
+    const roc = calculateROC(prices, 14);
+    const bBands = calculateBollingerBands(prices);
+    const atr = calculateATR(highs, lows, prices);
+    const adxData = calculateADX(highs, lows, prices);
+    const cmf = calculateCMF(highs, lows, prices, volumes);
+
+    // Apply weights to indicators
+    const weights = {
+        rsi: 0.7,          // Reduced weight due to overlap with StochRSI
+        stochRSI: 0.7,     // Reduced weight due to overlap with RSI
+        obv: 1.0,
+        macd: 1.0,
+        momentum: 0.8,
+        roc: 0.8,
+        bBands: 1.0,
+        atr: 1.2,          // Increased weight for volatility
+        adx: 1.3,          // Increased weight for trend strength
+        cmf: 1.2           // Increased weight for volume analysis
+    };
+
     return {
-        rsi: indicators.rsi[indicators.rsi.length - 1],
+        rsi: rsi.map(v => v * weights.rsi),
         stochRSI: {
-            k: indicators.stochRSI.k[indicators.stochRSI.k.length - 1],
-            d: indicators.stochRSI.d[indicators.stochRSI.d.length - 1]
+            k: stochRSI.k.map(v => v * weights.stochRSI),
+            d: stochRSI.d.map(v => v * weights.stochRSI)
         },
-        obv: indicators.obv[indicators.obv.length - 1],
-        macd: indicators.macd.histogram[indicators.macd.histogram.length - 1],
-        momentum: indicators.momentum[indicators.momentum.length - 1],
-        roc: indicators.roc[indicators.roc.length - 1],
-        bBands: indicators.bBands[indicators.bBands.length - 1]
-    };
-}
-
-// Calculate all indicators at once
-export function calculateIndicators(prices, volumes) {
-    return {
-        rsi: calculateRSI(prices),
-        stochRSI: calculateStochRSI(prices),
-        obv: calculateOBV(prices, volumes),
-        macd: calculateMACD(prices),
-        momentum: calculateMomentum(prices, 10),
-        roc: calculateROC(prices, 14),
-        bBands: calculateBollingerBands(prices)
+        obv: obv.map(v => v * weights.obv),
+        macd: {
+            macdLine: macd.macdLine.map(v => v * weights.macd),
+            signalLine: macd.signalLine.map(v => v * weights.macd),
+            histogram: macd.histogram.map(v => v * weights.macd)
+        },
+        momentum: momentum.map(v => v * weights.momentum),
+        roc: roc.map(v => v * weights.roc),
+        bBands: bBands.map(v => ({
+            bandwidth: v.bandwidth * weights.bBands,
+            percentB: v.percentB * weights.bBands,
+            deviation: v.deviation * weights.bBands
+        })),
+        atr: atr.map(v => v * weights.atr),
+        adx: {
+            adx: adxData.adx.map(v => v * weights.adx),
+            plusDI: adxData.plusDI.map(v => v * weights.adx),
+            minusDI: adxData.minusDI.map(v => v * weights.adx)
+        },
+        cmf: cmf.map(v => v * weights.cmf)
     };
 }

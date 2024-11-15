@@ -39,7 +39,7 @@ export async function fetchKlines({
       params.endTime = moment(endTime).valueOf();
     }
 
-    const response = await axios.get(`${BINANCE_API_BASE}/klines`, { params });
+    let response = await axios.get(`${BINANCE_API_BASE}/klines`, { params });
     
     let retries = 3;
     while (retries > 0 && !response.data) {
@@ -51,8 +51,12 @@ export async function fetchKlines({
     if (!response.data) {
       throw new Error('Failed to fetch kline data after retries');
     }
-    console.log(`First line: ${response.data[0]}`);
-    console.log(`Last line: ${response.data[response.data.length - 1]}`);
+    
+    console.log(`Fetched ${response.data.length} klines`);
+    if (response.data.length > 0) {
+      console.log('First kline timestamp:', moment(response.data[0][0]).format('YYYY-MM-DD HH:mm:ss'));
+      console.log('Last kline timestamp:', moment(response.data[response.data.length - 1][0]).format('YYYY-MM-DD HH:mm:ss'));
+    }
     
     const klines = response.data.map(kline => ({
       openTime: kline[0],
@@ -67,12 +71,26 @@ export async function fetchKlines({
       takerBuyBaseVolume: parseFloat(kline[9]),
       takerBuyQuoteVolume: parseFloat(kline[10])
     }));
-    console.log(`Klines: ${klines.length}`);
-    klines.forEach(validateKlineData);
+
+    // Validate each kline
+    klines.forEach((kline, index) => {
+      try {
+        validateKlineData(kline);
+      } catch (error) {
+        console.error(`Invalid kline at index ${index}:`, error.message);
+        throw error;
+      }
+    });
 
     return klines;
   } catch (error) {
     console.error('Error fetching klines:', error.message);
+    if (error.response) {
+      console.error('API response error:', {
+        status: error.response.status,
+        data: error.response.data
+      });
+    }
     throw error;
   }
 }

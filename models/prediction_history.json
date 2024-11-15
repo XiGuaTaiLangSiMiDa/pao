@@ -1,27 +1,30 @@
 [
   {
-    "timestamp": 1731647167480,
-    "predictedChange": 0.549703061580658,
-    "predictedPrice": 206.99161872256997,
+    "timestamp": 1731652533506,
+    "predictedChange": 0.3095210790634155,
+    "predictedPrice": 209.74720857632158,
     "direction": "UP",
-    "confidence": 76.4007435693802,
+    "confidence": 66.76409573609689,
+    "signal": "Neutral",
     "modelInfo": {
-      "trainedAt": "2024-11-15T04:32:39.242Z",
+      "trainedAt": "2024-11-15T06:22:27.542Z",
       "hyperparameters": {
-        "lookbackWindow": 20,
-        "featureSize": 19,
-        "epochs": 50,
+        "lookbackWindow": 30,
+        "featureSize": 22,
+        "epochs": 100,
         "validationSplit": 0.2,
-        "patience": 15,
+        "patience": 20,
         "searchSpace": {
           "batchSize": [
             32,
-            64
+            64,
+            128
           ],
           "learningRate": [
-            0.001,
             0.0005,
-            0.0001
+            0.0002,
+            0.0001,
+            0.00005
           ],
           "lstmUnits": [
             [
@@ -35,59 +38,124 @@
             [
               128,
               64
+            ],
+            [
+              192,
+              96
             ]
           ],
           "dropoutRate": [
-            0.2,
             0.3,
-            0.4
+            0.4,
+            0.5
           ],
           "l2Regularization": [
-            0.00001,
             0.00005,
-            0.0001
+            0.0001,
+            0.0002
           ]
+        },
+        "featureWeights": {
+          "trend": {
+            "adx": 1.2,
+            "macd": 1.1,
+            "rsi": 0.8,
+            "stochRSI": 0.8
+          },
+          "momentum": {
+            "momentum": 1,
+            "roc": 1,
+            "obv": 1
+          },
+          "volatility": {
+            "atr": 1.1,
+            "bBands": 1
+          },
+          "volume": {
+            "cmf": 1.1,
+            "obv": 1
+          }
+        },
+        "trendThresholds": {
+          "strong": 0.02,
+          "medium": 0.01,
+          "weak": 0.005
         },
         "classWeights": {
           "positive": 1,
-          "negative": 1.1010752688172043
+          "negative": 1.0997830802603037
+        },
+        "earlyStoppingConfig": {
+          "monitor": "val_loss",
+          "minDelta": 0.0001,
+          "patience": 20,
+          "mode": "min",
+          "restoreBestWeights": true
+        },
+        "learningRateSchedule": {
+          "initialLearningRate": 0.0005,
+          "decaySteps": 2000,
+          "decayRate": 0.97,
+          "staircase": false
+        },
+        "gradientClipping": {
+          "clipNorm": 0.5,
+          "clipValue": 0.3
+        },
+        "validationConfig": {
+          "validationSplit": 0.2,
+          "validationFrequency": 1,
+          "validationBatchSize": 32
+        },
+        "predictionConfig": {
+          "ensembleSize": 5,
+          "confidenceThreshold": 0.7,
+          "minTrendStrength": 0.015
         }
       }
     },
     "metadata": {
       "price": {
-        "open": 205.87,
-        "high": 206.51,
-        "low": 205.58,
-        "close": 205.86
+        "open": 209.62,
+        "high": 209.82,
+        "low": 208.62,
+        "close": 209.1
       },
       "indicators": {
-        "rsi": 33.77544417160625,
+        "rsi": 35.01253509080689,
         "stochRSI": {
-          "k": 5.592324832188507,
-          "d": 2.8059001659455043
+          "k": 67.04635901935087,
+          "d": 65.30216332217984
         },
-        "obv": -40.49321113103034,
-        "macd": -0.34352211434227153,
-        "momentum": -2.1531441608441337,
-        "roc": -2.0786757360985475,
+        "obv": 16.491340368298946,
+        "macd": 0.31539219609594427,
+        "momentum": 0.5043553587756833,
+        "roc": -0.21748461868650482,
         "bBands": {
-          "bandwidth": 0.033381870836732205,
-          "percentB": 3.462771880814529,
-          "deviation": -1.8614891247674248
-        }
+          "bandwidth": 0.028083580032790535,
+          "percentB": 57.816480899693765,
+          "deviation": 0.3126592359877502
+        },
+        "adx": {
+          "adx": 30.584316279966067,
+          "plusDI": 26.841932686632095,
+          "minusDI": 31.924621093589238
+        },
+        "atr": 1.928078021314641,
+        "cmf": -0.037274980836577425
       },
       "analysis": {
         "signals": [
-          "随机RSI金叉形成(K:5.6, D:2.8)，表明短期买盘力量正在增强",
-          "OBV为负值(-40.49)，表明近期大多数成交量都集中在下跌时段，卖盘比较活跃",
-          "MACD为负值(-0.3435)，表明当前下跌趋势占优",
-          "价格已经接近布林带下轨，跌幅可能过大，关注反弹机会"
+          "随机RSI金叉形成(K:67.0, D:65.3)，这是一个短期看涨信号。简单来说，K线（快线）超过D线（慢线）表示买盘力量正在增强，市场可能开始转向上涨",
+          "OBV为正值(16.49)，这表示最近的交易量主要出现在价格上涨时。用大白话说，就是当价格上涨时，交易更活跃，说明买盘比较强势",
+          "MACD为正值(0.3154)，这是一个中期看涨信号。简单来说，正的MACD值表示市场整体趋势向上，买方力量占优",
+          "ADX显示强劲下跌趋势(30.6)，-DI(31.9) > +DI(26.8)。用大白话说，ADX大于25表示趋势强烈，而-DI大于+DI说明这个强趋势是向下的",
+          "ATR显示高波动性(3.3%)，这表示市场波动幅度较大。用大白话说，就是价格上下波动比较剧烈，风险较高，建议谨慎操作或降低交易规模"
         ],
-        "trend": "downtrend",
+        "trend": "uptrend",
         "strength": "moderate",
-        "volatility": 0.0045174139019768704,
-        "riskLevel": 0.20180696556079078
+        "volatility": 0.007461306223916204,
+        "riskLevel": 0.002238391867174861
       }
     }
   }

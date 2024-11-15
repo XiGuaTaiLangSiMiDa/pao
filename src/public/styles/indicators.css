@@ -1,0 +1,86 @@
+/* Technical indicator specific styles */
+#rsi, #stoch-rsi-k, #stoch-rsi-d {
+    position: relative;
+}
+
+#rsi[data-value="overbought"],
+#stoch-rsi-k[data-value="overbought"],
+#stoch-rsi-d[data-value="overbought"] {
+    color: #f44336;
+}
+
+#rsi[data-value="oversold"],
+#stoch-rsi-k[data-value="oversold"],
+#stoch-rsi-d[data-value="oversold"] {
+    color: #4CAF50;
+}
+
+#obv[data-value="positive"] {
+    color: #4CAF50;
+}
+
+#obv[data-value="negative"] {
+    color: #f44336;
+}
+
+/* ADX styles */
+#adx[data-value="strong"] {
+    color: #2196F3;
+}
+
+#adx[data-value="weak"] {
+    color: #9E9E9E;
+}
+
+#plus-di[data-value="positive"],
+#minus-di[data-value="positive"] {
+    color: #4CAF50;
+}
+
+#plus-di[data-value="negative"],
+#minus-di[data-value="negative"] {
+    color: #f44336;
+}
+
+/* ATR styles */
+#atr[data-value="high"] {
+    color: #E91E63;
+}
+
+#atr[data-value="normal"] {
+    color: #2196F3;
+}
+
+/* CMF styles */
+#cmf[data-value="positive"] {
+    color: #4CAF50;
+}
+
+#cmf[data-value="negative"] {
+    color: #f44336;
+}
+
+/* Trend styles */
+#trend {
+    text-transform: capitalize;
+}
+
+#trend[data-value="uptrend"] {
+    color: #4CAF50;
+}
+
+#trend[data-value="downtrend"] {
+    color: #f44336;
+}
+
+#trend[data-value="neutral"] {
+    color: #9E9E9E;
+}
+
+#trend[data-value="overbought"] {
+    color: #E91E63;
+}
+
+#trend[data-value="oversold"] {
+    color: #2196F3;
+}

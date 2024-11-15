@@ -119,6 +119,43 @@ h2 {
     color: #f44336;
 }
 
+/* ADX styles */
+#adx[data-value="strong"] {
+    color: #2196F3;
+}
+
+#adx[data-value="weak"] {
+    color: #9E9E9E;
+}
+
+#plus-di[data-value="positive"],
+#minus-di[data-value="positive"] {
+    color: #4CAF50;
+}
+
+#plus-di[data-value="negative"],
+#minus-di[data-value="negative"] {
+    color: #f44336;
+}
+
+/* ATR styles */
+#atr[data-value="high"] {
+    color: #E91E63;
+}
+
+#atr[data-value="normal"] {
+    color: #2196F3;
+}
+
+/* CMF styles */
+#cmf[data-value="positive"] {
+    color: #4CAF50;
+}
+
+#cmf[data-value="negative"] {
+    color: #f44336;
+}
+
 /* Trend styles */
 #trend {
     text-transform: capitalize;
