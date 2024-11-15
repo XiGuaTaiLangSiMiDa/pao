@@ -145,5 +145,110 @@
       "totalPredictions": 194
     },
     "timestamp": "2024-11-15T08:18:42.855Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        64,
+        32
+      ],
+      "dropoutRate": 0.5,
+      "l2Regularization": 0.0001
+    },
+    "score": 0.055659928432195166,
+    "evaluation": {
+      "mse": 0.03054773242524839,
+      "mae": 0.1448027848736527,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T08:21:49.147Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        64,
+        32
+      ],
+      "dropoutRate": 0.5,
+      "l2Regularization": 0.0002
+    },
+    "score": 0.04922816916818422,
+    "evaluation": {
+      "mse": 0.024881933067315325,
+      "mae": 0.1309179864708603,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T08:27:09.176Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        96,
+        48
+      ],
+      "dropoutRate": 0.3,
+      "l2Regularization": 0.00005
+    },
+    "score": 0.05209832541108708,
+    "evaluation": {
+      "mse": 0.028845439328060316,
+      "mae": 0.13520049893287653,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T08:34:08.177Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        96,
+        48
+      ],
+      "dropoutRate": 0.3,
+      "l2Regularization": 0.0001
+    },
+    "score": 0.052486150237466805,
+    "evaluation": {
+      "mse": 0.02743220525149046,
+      "mae": 0.1383775604562354,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T08:37:13.109Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        96,
+        48
+      ],
+      "dropoutRate": 0.3,
+      "l2Regularization": 0.0002
+    },
+    "score": 0.051151684206437,
+    "evaluation": {
+      "mse": 0.026208317563717623,
+      "mae": 0.13556119060316651,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T08:40:54.420Z"
   }
 ]
