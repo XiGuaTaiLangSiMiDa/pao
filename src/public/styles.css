@@ -22,11 +22,16 @@ h1 {
     color: #333;
 }
 
+h2 {
+    color: #444;
+    margin-bottom: 15px;
+}
+
 .last-update {
     color: #666;
 }
 
-.prediction-panel {
+.prediction-panel, .technical-panel, .analysis-panel, .stats-panel, .prediction-history-panel, .risk-panel {
     background: white;
     padding: 20px;
     border-radius: 8px;
@@ -34,26 +39,84 @@ h1 {
     margin-bottom: 20px;
 }
 
-.prediction-grid {
+.prediction-grid, .indicators-grid, .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
 }
 
-.prediction-item {
+.prediction-item, .indicator-item {
     text-align: center;
+    position: relative;
 }
 
-.prediction-item h3 {
+.prediction-item h3, .indicator-item h3 {
     margin: 0 0 10px 0;
     color: #666;
     font-size: 0.9em;
 }
 
-.prediction-value {
+.prediction-value, .indicator-value {
     font-size: 1.5em;
     font-weight: bold;
     color: #333;
+}
+
+/* Tooltip styles */
+.tooltip {
+    visibility: hidden;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    white-space: nowrap;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.prediction-item:hover .tooltip,
+.indicator-item:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Analysis panel styles */
+.analysis-content {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    line-height: 1.6;
+}
+
+/* Technical indicator specific styles */
+#rsi, #stoch-rsi-k, #stoch-rsi-d {
+    position: relative;
+}
+
+#rsi[data-value="overbought"],
+#stoch-rsi-k[data-value="overbought"],
+#stoch-rsi-d[data-value="overbought"] {
+    color: #f44336;
+}
+
+#rsi[data-value="oversold"],
+#stoch-rsi-k[data-value="oversold"],
+#stoch-rsi-d[data-value="oversold"] {
+    color: #4CAF50;
+}
+
+#obv[data-value="positive"] {
+    color: #4CAF50;
+}
+
+#obv[data-value="negative"] {
+    color: #f44336;
 }
 
 /* Trend styles */
@@ -79,23 +142,6 @@ h1 {
 
 #trend[data-value="oversold"] {
     color: #2196F3;
-}
-
-/* Strength styles */
-#strength {
-    text-transform: capitalize;
-}
-
-#strength[data-value="strong"] {
-    color: #4CAF50;
-}
-
-#strength[data-value="moderate"] {
-    color: #FF9800;
-}
-
-#strength[data-value="weak"] {
-    color: #f44336;
 }
 
 .signal {
@@ -144,28 +190,6 @@ h1 {
     color: #f44336;
 }
 
-.stats-panel {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin: 20px 0;
-}
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-}
-
-.prediction-history-panel {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin: 20px 0;
-}
-
 .table-container {
     overflow-x: auto;
 }
@@ -212,14 +236,6 @@ h1 {
     background-color: rgba(96, 125, 139, 0.1);
 }
 
-.risk-panel {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin: 20px 0;
-}
-
 .risk-item {
     display: flex;
     align-items: center;
@@ -243,6 +259,7 @@ h1 {
 
 @media (max-width: 768px) {
     .prediction-grid,
+    .indicators-grid,
     .stats-grid {
         grid-template-columns: 1fr;
     }
@@ -251,5 +268,9 @@ h1 {
     .prediction-history td {
         padding: 8px;
         font-size: 0.9em;
+    }
+
+    .tooltip {
+        display: none;
     }
 }

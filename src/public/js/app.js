@@ -62,7 +62,8 @@ class PredictionUpdater {
             predictedChange: data.predictedChange,
             predictedPrice: data.predictedPrice,
             confidence: data.confidence,
-            signal: this.generateSignal(data)
+            signal: this.generateSignal(data),
+            accuracy: data.metadata.accuracy || '-'
         };
 
         this.predictionHistory.unshift(prediction);
@@ -98,6 +99,7 @@ class PredictionUpdater {
                 <td>$${prediction.predictedPrice.toFixed(2)}</td>
                 <td>${prediction.confidence.toFixed(1)}%</td>
                 <td>${prediction.signal}</td>
+                <td>${prediction.accuracy}</td>
             `;
             
             tbody.appendChild(row);
@@ -146,7 +148,9 @@ class PredictionUpdater {
         this.updateElement('predicted-change', `${data.predictedChange.toFixed(2)}%`);
         this.updateElement('predicted-price', `$${data.predictedPrice.toFixed(2)}`);
         this.updateElement('confidence', `${data.confidence.toFixed(1)}%`);
-        this.updateElement('rsi', metadata.indicators.rsi.toFixed(1));
+
+        // Update technical indicators
+        this.updateTechnicalIndicators(metadata);
         
         // Update market statistics
         const priceChange = ((metadata.price.close - metadata.price.open) / metadata.price.open) * 100;
@@ -159,30 +163,143 @@ class PredictionUpdater {
         this.updateElement('high-price', `$${metadata.price.high.toFixed(2)}`);
         this.updateElement('low-price', `$${metadata.price.low.toFixed(2)}`);
         
+        // Update volume trend
+        if (metadata.indicators && metadata.indicators.obv !== undefined) {
+            const volumeTrend = metadata.indicators.obv >= 0 ? '上升' : '下降';
+            this.updateElement('volume-trend', volumeTrend);
+        }
+
         // Update signal
         const signal = this.generateSignal(data);
         this.updateSignal(signal);
 
-        // Update trend and strength with data attributes
+        // Update trend
         if (metadata.analysis) {
             const trendEl = document.getElementById('trend');
             if (trendEl) {
-                trendEl.textContent = metadata.analysis.trend || '-';
+                trendEl.textContent = this.getTrendText(metadata.analysis.trend);
                 trendEl.setAttribute('data-value', metadata.analysis.trend || '');
             }
-
-            const strengthEl = document.getElementById('strength');
-            if (strengthEl) {
-                strengthEl.textContent = metadata.analysis.strength || '-';
-                strengthEl.setAttribute('data-value', metadata.analysis.strength || '');
-            }
         }
+
+        // Update technical analysis summary
+        this.updateAnalysisSummary(metadata);
 
         // Update risk assessment
         this.updateRiskAssessment(metadata);
 
         // Update timestamp
         this.updateElement('last-update', new Date().toLocaleTimeString());
+    }
+
+    getTrendText(trend) {
+        const trendMap = {
+            'uptrend': '上升趋势',
+            'downtrend': '下降趋势',
+            'neutral': '横盘整理',
+            'overbought': '超买',
+            'oversold': '超卖'
+        };
+        return trendMap[trend] || trend || '-';
+    }
+
+    updateTechnicalIndicators(metadata) {
+        if (!metadata.indicators) return;
+
+        const { indicators } = metadata;
+
+        // Update RSI
+        const rsi = indicators.rsi;
+        const rsiEl = document.getElementById('rsi');
+        if (rsiEl) {
+            rsiEl.textContent = rsi.toFixed(1);
+            rsiEl.setAttribute('data-value', rsi > 70 ? 'overbought' : rsi < 30 ? 'oversold' : 'neutral');
+        }
+
+        // Update StochRSI
+        if (indicators.stochRSI) {
+            const stochK = indicators.stochRSI.k;
+            const stochD = indicators.stochRSI.d;
+
+            const kEl = document.getElementById('stoch-rsi-k');
+            if (kEl) {
+                kEl.textContent = stochK.toFixed(1);
+                kEl.setAttribute('data-value', stochK > 80 ? 'overbought' : stochK < 20 ? 'oversold' : 'neutral');
+            }
+
+            const dEl = document.getElementById('stoch-rsi-d');
+            if (dEl) {
+                dEl.textContent = stochD.toFixed(1);
+                dEl.setAttribute('data-value', stochD > 80 ? 'overbought' : stochD < 20 ? 'oversold' : 'neutral');
+            }
+        }
+
+        // Update OBV
+        if (indicators.obv !== undefined) {
+            const obvEl = document.getElementById('obv');
+            if (obvEl) {
+                obvEl.textContent = indicators.obv.toFixed(2);
+                obvEl.setAttribute('data-value', indicators.obv >= 0 ? 'positive' : 'negative');
+            }
+        }
+    }
+
+    updateAnalysisSummary(metadata) {
+        const summaryEl = document.getElementById('analysis-summary');
+        if (!summaryEl || !metadata.indicators) return;
+
+        const { indicators } = metadata;
+        const analysis = [];
+
+        // RSI Analysis
+        if (indicators.rsi > 70) {
+            analysis.push(`RSI处于超买区间(${indicators.rsi.toFixed(1)})，可能面临回调风险`);
+        } else if (indicators.rsi < 30) {
+            analysis.push(`RSI处于超卖区间(${indicators.rsi.toFixed(1)})，可能出现反弹机会`);
+        }
+
+        // StochRSI Analysis
+        if (indicators.stochRSI) {
+            const { k, d } = indicators.stochRSI;
+            if (k > d) {
+                analysis.push(`随机RSI金叉形成(K:${k.toFixed(1)}, D:${d.toFixed(1)})，显示上升动能`);
+            } else if (k < d) {
+                analysis.push(`随机RSI死叉形成(K:${k.toFixed(1)}, D:${d.toFixed(1)})，显示下降压力`);
+            }
+        }
+
+        // OBV Analysis
+        if (indicators.obv !== undefined) {
+            if (indicators.obv > 0) {
+                analysis.push(`OBV为正值(${indicators.obv.toFixed(2)})，表明买方力量占优`);
+            } else {
+                analysis.push(`OBV为负值(${indicators.obv.toFixed(2)})，表明卖方压力较大`);
+            }
+        }
+
+        // MACD Analysis
+        if (indicators.macd !== undefined) {
+            if (indicators.macd > 0) {
+                analysis.push(`MACD为正值(${indicators.macd.toFixed(4)})，趋势向上`);
+            } else {
+                analysis.push(`MACD为负值(${indicators.macd.toFixed(4)})，趋势向下`);
+            }
+        }
+
+        // Bollinger Bands Analysis
+        if (indicators.bBands) {
+            const { percentB } = indicators.bBands;
+            if (percentB > 80) {
+                analysis.push('价格接近布林带上轨，可能存在超买风险');
+            } else if (percentB < 20) {
+                analysis.push('价格接近布林带下轨，可能存在超卖机会');
+            }
+        }
+
+        // Combine all analyses
+        summaryEl.innerHTML = analysis.length > 0 
+            ? analysis.join('<br>')
+            : '市场处于中性状态，无明显信号';
     }
 
     updateElement(id, value) {
@@ -203,32 +320,38 @@ class PredictionUpdater {
 
     updateRiskAssessment(metadata) {
         const riskItems = document.getElementById('risk-items');
-        if (!riskItems) return;
+        if (!riskItems || !metadata.analysis) return;
 
         riskItems.innerHTML = '';
         
-        if (!metadata.analysis) return;
+        const { analysis, indicators } = metadata;
 
         // Add risk items based on analysis
-        if (metadata.analysis.riskLevel > 0.7) {
-            this.addRiskItem(riskItems, 'High risk conditions - Exercise extreme caution');
-        } else if (metadata.analysis.riskLevel > 0.5) {
-            this.addRiskItem(riskItems, 'Moderate risk conditions - Trade with caution');
+        if (analysis.riskLevel > 0.7) {
+            this.addRiskItem(riskItems, '高风险条件 - 建议谨慎操作');
+        } else if (analysis.riskLevel > 0.5) {
+            this.addRiskItem(riskItems, '中等风险条件 - 注意风险控制');
         }
 
-        if (metadata.analysis.trend === 'overbought') {
-            this.addRiskItem(riskItems,
-                `Overbought conditions (RSI: ${metadata.indicators.rsi.toFixed(1)}) - Potential reversal risk`
-            );
-        } else if (metadata.analysis.trend === 'oversold') {
-            this.addRiskItem(riskItems,
-                `Oversold conditions (RSI: ${metadata.indicators.rsi.toFixed(1)}) - Potential reversal risk`
-            );
+        if (indicators) {
+            if (indicators.rsi > 70) {
+                this.addRiskItem(riskItems,
+                    `超买条件 (RSI: ${indicators.rsi.toFixed(1)}) - 注意回调风险`
+                );
+            } else if (indicators.rsi < 30) {
+                this.addRiskItem(riskItems,
+                    `超卖条件 (RSI: ${indicators.rsi.toFixed(1)}) - 关注反弹机会`
+                );
+            }
+
+            if (indicators.stochRSI && indicators.stochRSI.k > 80 && indicators.stochRSI.d > 80) {
+                this.addRiskItem(riskItems, 'StochRSI双线超买 - 可能出现回调');
+            }
         }
 
-        if (metadata.analysis.volatility > 0.02) {
+        if (analysis.volatility > 0.02) {
             this.addRiskItem(riskItems, 
-                `High market volatility (${(metadata.analysis.volatility * 100).toFixed(1)}%) - Exercise caution`
+                `市场波动性较高 (${(analysis.volatility * 100).toFixed(1)}%) - 建议谨慎`
             );
         }
     }
