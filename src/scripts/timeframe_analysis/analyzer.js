@@ -1,4 +1,4 @@
-import { calculateStockRSI, calculateOBV } from './indicators.js';
+import { calculateStockRSI, calculateOBV, calculateMACD } from './indicators.js';
 
 // Timeframe definitions in minutes
 export const TIMEFRAMES = {
@@ -12,6 +12,23 @@ export const TIMEFRAMES = {
   '1d': 1440,
   '1w': 10080,
   '1M': 43200
+};
+
+// Dynamic thresholds based on timeframe
+const getThresholds = (timeframe) => {
+  const minutes = TIMEFRAMES[timeframe];
+  // 更大的时间维度使用更严格的阈值
+  const factor = Math.log10(minutes) / Math.log10(TIMEFRAMES['1M']);
+  
+  return {
+    // RSI阈值随时间维度增加而更严格
+    rsiOverbought: 60 + factor * 10, // 60-70
+    rsiOversold: 40 - factor * 10,   // 30-40
+    // 成交量阈值随时间维度增加而增加
+    volumeThreshold: 0.2 + factor * 0.3, // 0.2-0.5
+    // 价格波动阈值随时间维度增加而增加
+    priceSwingThreshold: 0.3 + factor * 0.7, // 0.3-1.0
+  };
 };
 
 export class TimeframeAnalyzer {
@@ -39,9 +56,12 @@ export class TimeframeAnalyzer {
       const lows = timeframeData.map(k => parseFloat(k.low));
       
       console.log(`Calculating indicators for ${timeframe}...`);
+      const macd = calculateMACD(closes);
+      
       this.indicators[timeframe] = {
         stockRSI: calculateStockRSI(closes),
         obv: calculateOBV(closes, volumes),
+        macd: macd,
         prices: closes,
         highs,
         lows,
@@ -106,24 +126,27 @@ export class TimeframeAnalyzer {
         continue;
       }
       
-      const { stockRSI, obv, prices, highs, lows, timestamps } = this.indicators[timeframe];
+      const { stockRSI, obv, macd, prices, highs, lows, timestamps } = this.indicators[timeframe];
       if (!prices || prices.length < 2) {
         console.log(`Skipping reversal detection for ${timeframe} - insufficient price data`);
         continue;
       }
       
       console.log(`Detecting reversals for ${timeframe} (${prices.length} periods)...`);
-      this.reversalPoints[timeframe] = this.findReversalPoints(stockRSI, obv, prices, highs, lows, timestamps);
+      this.reversalPoints[timeframe] = this.findReversalPoints(timeframe, stockRSI, obv, macd, prices, highs, lows, timestamps);
       console.log(`Found ${this.reversalPoints[timeframe].length} reversals for ${timeframe}`);
     }
   }
 
-  findReversalPoints(stockRSI, obv, prices, highs, lows, timestamps) {
+  findReversalPoints(timeframe, stockRSI, obv, macd, prices, highs, lows, timestamps) {
     const reversals = [];
     const lookback = 10;
     const shortTerm = 5;
     const mediumTerm = 10;
     const longTerm = 20;
+
+    // Get dynamic thresholds for this timeframe
+    const thresholds = getThresholds(timeframe);
 
     // Ensure we have enough data
     if (prices.length < longTerm + 1) {
@@ -138,14 +161,18 @@ export class TimeframeAnalyzer {
 
       // RSI analysis
       const rsiValue = stockRSI[i];
-      const isOverbought = rsiValue > 65; // Relaxed from 70
-      const isOversold = rsiValue < 35;   // Relaxed from 30
+      const isOverbought = rsiValue > thresholds.rsiOverbought;
+      const isOversold = rsiValue < thresholds.rsiOversold;
       const rsiDirection = Math.sign(stockRSI[i] - stockRSI[i - shortTerm]);
 
       // Volume analysis
       const recentVolumes = obv.slice(i - shortTerm, i + 1);
       const volumeChange = (recentVolumes[recentVolumes.length - 1] - recentVolumes[0]) / Math.abs(recentVolumes[0]);
-      const volumeSpike = volumeChange > 0.3; // Relaxed from 0.5
+      const volumeSpike = volumeChange > thresholds.volumeThreshold;
+
+      // MACD analysis
+      const macdCrossover = Math.sign(macd.histogram[i]) !== Math.sign(macd.histogram[i - 1]);
+      const macdDivergence = Math.sign(macd.macdLine[i] - macd.macdLine[i - 1]) !== Math.sign(prices[i] - prices[i - 1]);
 
       // Trend analysis
       const shortTermTrend = this.calculateTrendStrength(prices.slice(i - shortTerm, i + 1));
@@ -161,21 +188,23 @@ export class TimeframeAnalyzer {
       const pricePattern = this.detectPricePattern(prices.slice(i - shortTerm, i + 1));
       const hasReversalPattern = pricePattern !== 'none';
 
-      // Detect potential reversal conditions with more flexible criteria
+      // Detect potential reversal conditions with dynamic thresholds
       const isBullishReversal = (
-        (isOversold || (rsiValue < 40 && hasDivergence)) &&
+        (isOversold || (rsiValue < thresholds.rsiOversold + 5 && hasDivergence)) &&
         (priceDirection > 0 || hasReversalPattern) &&
-        (volumeSpike || volumeChange > 0.2) &&
-        (shortTermTrend > -0.3) && // Relaxed condition
-        priceSwing > 0.5 // Reduced from 1
+        (volumeSpike || volumeChange > thresholds.volumeThreshold * 0.8) &&
+        (shortTermTrend > -0.3) &&
+        (macdCrossover || macdDivergence) &&
+        priceSwing > thresholds.priceSwingThreshold
       );
 
       const isBearishReversal = (
-        (isOverbought || (rsiValue > 60 && hasDivergence)) &&
+        (isOverbought || (rsiValue > thresholds.rsiOverbought - 5 && hasDivergence)) &&
         (priceDirection < 0 || hasReversalPattern) &&
-        (volumeSpike || volumeChange > 0.2) &&
-        (shortTermTrend < 0.3) && // Relaxed condition
-        priceSwing > 0.5
+        (volumeSpike || volumeChange > thresholds.volumeThreshold * 0.8) &&
+        (shortTermTrend < 0.3) &&
+        (macdCrossover || macdDivergence) &&
+        priceSwing > thresholds.priceSwingThreshold
       );
 
       if (isBullishReversal || isBearishReversal) {
@@ -186,6 +215,7 @@ export class TimeframeAnalyzer {
           type: isBullishReversal ? 'bullish' : 'bearish',
           stockRSI: rsiValue,
           obvDivergence: volumeChange,
+          macdSignal: macdCrossover ? 'crossover' : (macdDivergence ? 'divergence' : 'none'),
           strength: strength,
           pattern: pricePattern,
           confidence: this.calculateSignalConfidence(
@@ -194,7 +224,8 @@ export class TimeframeAnalyzer {
             hasDivergence,
             priceSwing,
             Math.abs(shortTermTrend - longTermTrend),
-            hasReversalPattern
+            hasReversalPattern,
+            macdCrossover || macdDivergence
           )
         });
       }
@@ -245,11 +276,11 @@ export class TimeframeAnalyzer {
     return { tops, bottoms };
   }
 
-  calculateSignalConfidence(rsi, volumeSpike, hasDivergence, priceSwing, trendDiff, hasPattern) {
+  calculateSignalConfidence(rsi, volumeSpike, hasDivergence, priceSwing, trendDiff, hasPattern, hasMacdSignal) {
     let confidence = 0;
     
     // RSI extremes increase confidence
-    confidence += Math.min(100, Math.abs(rsi - 50)) / 100 * 0.25;
+    confidence += Math.min(100, Math.abs(rsi - 50)) / 100 * 0.2;
     
     // Volume spike increases confidence
     if (volumeSpike) confidence += 0.15;
@@ -258,13 +289,16 @@ export class TimeframeAnalyzer {
     if (hasDivergence) confidence += 0.15;
     
     // Price swing impact
-    confidence += Math.min(priceSwing / 8, 0.2);
+    confidence += Math.min(priceSwing / 8, 0.15);
     
     // Trend difference impact
     confidence += Math.min(trendDiff, 0.15);
     
     // Pattern recognition bonus
     if (hasPattern) confidence += 0.1;
+    
+    // MACD signal bonus
+    if (hasMacdSignal) confidence += 0.1;
     
     return Math.min(1, confidence);
   }
@@ -283,6 +317,7 @@ export class TimeframeAnalyzer {
           type: reversal.type,
           stockRSI: reversal.stockRSI,
           obvDivergence: reversal.obvDivergence,
+          macdSignal: reversal.macdSignal,
           strength: reversal.strength,
           pattern: reversal.pattern,
           confidence: reversal.confidence
@@ -315,7 +350,7 @@ export class TimeframeAnalyzer {
   }
 
   calculateTimeframeProbability(timeframe) {
-    const { stockRSI, obv, prices, highs, lows } = this.indicators[timeframe];
+    const { stockRSI, obv, macd, prices, highs, lows } = this.indicators[timeframe];
     const lookback = {
       short: 5,
       medium: 10,
@@ -342,6 +377,11 @@ export class TimeframeAnalyzer {
     // Volume analysis
     const volumeTrend = this.calculateEnhancedTrend(obv.slice(-lookback.medium));
 
+    // MACD analysis
+    const macdTrend = this.calculateEnhancedTrend(macd.macdLine.slice(-lookback.medium));
+    const recentHistogram = macd.histogram.slice(-lookback.short);
+    const macdMomentum = Math.sign(recentHistogram[recentHistogram.length - 1]);
+
     // Volatility analysis
     const recentSwings = highs.slice(-lookback.medium).map((high, i) => 
       (high - lows.slice(-lookback.medium)[i]) / prices.slice(-lookback.medium)[i] * 100
@@ -350,11 +390,12 @@ export class TimeframeAnalyzer {
 
     // Weight different factors with dynamic adjustment
     const weights = {
-      shortTerm: 0.35,
-      mediumTerm: 0.25,
+      shortTerm: 0.25,
+      mediumTerm: 0.20,
       longTerm: 0.15,
-      rsi: Math.min(0.15 + Math.abs(currentRSI - 50) / 100 * 0.1, 0.25),
-      volume: Math.min(0.1 + Math.abs(volumeTrend) * 0.1, 0.2)
+      rsi: Math.min(0.15 + Math.abs(currentRSI - 50) / 100 * 0.1, 0.20),
+      volume: Math.min(0.1 + Math.abs(volumeTrend) * 0.1, 0.15),
+      macd: 0.15
     };
 
     const trendScore = (
@@ -362,15 +403,17 @@ export class TimeframeAnalyzer {
       mediumTermTrend * weights.mediumTerm +
       longTermTrend * weights.longTerm +
       Math.sign(currentRSI - 50) * weights.rsi +
-      Math.sign(volumeTrend) * weights.volume
+      Math.sign(volumeTrend) * weights.volume +
+      (macdTrend + macdMomentum) * weights.macd
     );
 
     // Calculate confidence based on signal strength and consistency
     const trendConsistency = Math.abs(
       Math.sign(shortTermTrend) + 
       Math.sign(mediumTermTrend) + 
-      Math.sign(longTermTrend)
-    ) / 3;
+      Math.sign(longTermTrend) +
+      Math.sign(macdTrend)
+    ) / 4;
 
     const confidence = Math.min(1, (
       trendConsistency * 0.4 +
