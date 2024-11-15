@@ -376,5 +376,47 @@
       "totalPredictions": 194
     },
     "timestamp": "2024-11-15T06:50:51.126Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        96,
+        48
+      ],
+      "dropoutRate": 0.5,
+      "l2Regularization": 0.0002
+    },
+    "score": 0.05591988300076404,
+    "evaluation": {
+      "mse": 0.03089210131324138,
+      "mae": 0.14521014158489162,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T06:58:47.421Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        128,
+        64
+      ],
+      "dropoutRate": 0.3,
+      "l2Regularization": 0.00005
+    },
+    "score": 0.05179536660475566,
+    "evaluation": {
+      "mse": 0.027641682637276593,
+      "mae": 0.1357956451661501,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T07:05:08.242Z"
   }
 ]
