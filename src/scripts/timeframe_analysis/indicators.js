@@ -103,3 +103,35 @@ export const calculateOBV = (closes, volumes) => {
   
   return obv;
 };
+
+export const calculateMACD = (prices, fastPeriod = 12, slowPeriod = 26, signalPeriod = 9) => {
+  // Calculate EMAs
+  const fastEMA = calculateEMA(prices, fastPeriod);
+  const slowEMA = calculateEMA(prices, slowPeriod);
+  
+  // Calculate MACD line
+  const macdLine = fastEMA.map((fast, i) => fast - slowEMA[i]);
+  
+  // Calculate signal line (EMA of MACD line)
+  const signalLine = calculateEMA(macdLine, signalPeriod);
+  
+  // Calculate histogram
+  const histogram = macdLine.map((macd, i) => macd - signalLine[i]);
+  
+  return {
+    macdLine,
+    signalLine,
+    histogram
+  };
+};
+
+const calculateEMA = (prices, period) => {
+  const multiplier = 2 / (period + 1);
+  const ema = [prices[0]];
+  
+  for (let i = 1; i < prices.length; i++) {
+    ema.push((prices[i] - ema[i - 1]) * multiplier + ema[i - 1]);
+  }
+  
+  return ema;
+};
