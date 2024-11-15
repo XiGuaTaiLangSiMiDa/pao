@@ -182,8 +182,13 @@ class PredictionUpdater {
             }
         }
 
-        // Update technical analysis summary
-        this.updateAnalysisSummary(metadata);
+        // Update technical analysis summary directly from API signals
+        if (metadata.analysis && metadata.analysis.signals) {
+            const summaryEl = document.getElementById('analysis-summary');
+            if (summaryEl) {
+                summaryEl.innerHTML = metadata.analysis.signals.join('<br>');
+            }
+        }
 
         // Update risk assessment
         this.updateRiskAssessment(metadata);
@@ -242,64 +247,45 @@ class PredictionUpdater {
                 obvEl.setAttribute('data-value', indicators.obv >= 0 ? 'positive' : 'negative');
             }
         }
-    }
 
-    updateAnalysisSummary(metadata) {
-        const summaryEl = document.getElementById('analysis-summary');
-        if (!summaryEl || !metadata.indicators) return;
+        // Update ADX
+        if (indicators.adx) {
+            const adxEl = document.getElementById('adx');
+            if (adxEl) {
+                adxEl.textContent = indicators.adx.adx.toFixed(1);
+                adxEl.setAttribute('data-value', indicators.adx.adx > 25 ? 'strong' : 'weak');
+            }
 
-        const { indicators } = metadata;
-        const analysis = [];
+            const plusDiEl = document.getElementById('plus-di');
+            if (plusDiEl) {
+                plusDiEl.textContent = indicators.adx.plusDI.toFixed(1);
+                plusDiEl.setAttribute('data-value', indicators.adx.plusDI > indicators.adx.minusDI ? 'positive' : 'negative');
+            }
 
-        // RSI Analysis
-        if (indicators.rsi > 70) {
-            analysis.push(`RSI处于超买区间(${indicators.rsi.toFixed(1)})，可能面临回调风险`);
-        } else if (indicators.rsi < 30) {
-            analysis.push(`RSI处于超卖区间(${indicators.rsi.toFixed(1)})，可能出现反弹机会`);
-        }
-
-        // StochRSI Analysis
-        if (indicators.stochRSI) {
-            const { k, d } = indicators.stochRSI;
-            if (k > d) {
-                analysis.push(`随机RSI金叉形成(K:${k.toFixed(1)}, D:${d.toFixed(1)})，显示上升动能`);
-            } else if (k < d) {
-                analysis.push(`随机RSI死叉形成(K:${k.toFixed(1)}, D:${d.toFixed(1)})，显示下降压力`);
+            const minusDiEl = document.getElementById('minus-di');
+            if (minusDiEl) {
+                minusDiEl.textContent = indicators.adx.minusDI.toFixed(1);
+                minusDiEl.setAttribute('data-value', indicators.adx.minusDI > indicators.adx.plusDI ? 'positive' : 'negative');
             }
         }
 
-        // OBV Analysis
-        if (indicators.obv !== undefined) {
-            if (indicators.obv > 0) {
-                analysis.push(`OBV为正值(${indicators.obv.toFixed(2)})，表明买方力量占优`);
-            } else {
-                analysis.push(`OBV为负值(${indicators.obv.toFixed(2)})，表明卖方压力较大`);
+        // Update ATR
+        if (indicators.atr !== undefined) {
+            const atrEl = document.getElementById('atr');
+            if (atrEl) {
+                atrEl.textContent = indicators.atr.toFixed(2);
+                atrEl.setAttribute('data-value', indicators.atr > 2 ? 'high' : 'normal');
             }
         }
 
-        // MACD Analysis
-        if (indicators.macd !== undefined) {
-            if (indicators.macd > 0) {
-                analysis.push(`MACD为正值(${indicators.macd.toFixed(4)})，趋势向上`);
-            } else {
-                analysis.push(`MACD为负值(${indicators.macd.toFixed(4)})，趋势向下`);
+        // Update CMF
+        if (indicators.cmf !== undefined) {
+            const cmfEl = document.getElementById('cmf');
+            if (cmfEl) {
+                cmfEl.textContent = indicators.cmf.toFixed(3);
+                cmfEl.setAttribute('data-value', indicators.cmf > 0 ? 'positive' : 'negative');
             }
         }
-
-        // Bollinger Bands Analysis
-        if (indicators.bBands) {
-            const { percentB } = indicators.bBands;
-            if (percentB > 80) {
-                analysis.push('价格接近布林带上轨，可能存在超买风险');
-            } else if (percentB < 20) {
-                analysis.push('价格接近布林带下轨，可能存在超卖机会');
-            }
-        }
-
-        // Combine all analyses
-        summaryEl.innerHTML = analysis.length > 0 
-            ? analysis.join('<br>')
-            : '市场处于中性状态，无明显信号';
     }
 
     updateElement(id, value) {
@@ -334,6 +320,7 @@ class PredictionUpdater {
         }
 
         if (indicators) {
+            // RSI Risk
             if (indicators.rsi > 70) {
                 this.addRiskItem(riskItems,
                     `超买条件 (RSI: ${indicators.rsi.toFixed(1)}) - 注意回调风险`
@@ -344,8 +331,33 @@ class PredictionUpdater {
                 );
             }
 
+            // StochRSI Risk
             if (indicators.stochRSI && indicators.stochRSI.k > 80 && indicators.stochRSI.d > 80) {
                 this.addRiskItem(riskItems, 'StochRSI双线超买 - 可能出现回调');
+            }
+
+            // ADX Risk
+            if (indicators.adx && indicators.adx.adx > 40) {
+                this.addRiskItem(riskItems, 
+                    `ADX显示极强趋势 (${indicators.adx.adx.toFixed(1)}) - 注意趋势耗尽风险`
+                );
+            }
+
+            // ATR Risk
+            if (indicators.atr) {
+                const atrPercent = (indicators.atr / metadata.price.close) * 100;
+                if (atrPercent > 3) {
+                    this.addRiskItem(riskItems, 
+                        `波动性异常高 (ATR: ${atrPercent.toFixed(1)}%) - 建议降低仓位`
+                    );
+                }
+            }
+
+            // CMF Risk
+            if (indicators.cmf && Math.abs(indicators.cmf) > 0.2) {
+                this.addRiskItem(riskItems,
+                    `资金流动异常 (CMF: ${indicators.cmf.toFixed(3)}) - 注意资金风险`
+                );
             }
         }
 

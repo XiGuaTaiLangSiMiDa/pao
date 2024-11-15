@@ -1,0 +1,186 @@
+{
+  "analysis": {
+    "upward": {
+      "total": 3430,
+      "effective": 922,
+      "indicators": {
+        "rsi": {
+          "0": {
+            "total": 2,
+            "effective": 1
+          },
+          "10": {
+            "total": 32,
+            "effective": 13
+          },
+          "20": {
+            "total": 278,
+            "effective": 83
+          },
+          "30": {
+            "total": 775,
+            "effective": 198
+          },
+          "40": {
+            "total": 1103,
+            "effective": 288
+          },
+          "50": {
+            "total": 874,
+            "effective": 227
+          },
+          "60": {
+            "total": 320,
+            "effective": 97
+          },
+          "70": {
+            "total": 43,
+            "effective": 14
+          },
+          "80": {
+            "total": 3,
+            "effective": 1
+          }
+        },
+        "macd": {
+          "negative": {
+            "total": 2228,
+            "effective": 619
+          },
+          "positive": {
+            "total": 1202,
+            "effective": 303
+          }
+        },
+        "bb": {
+          "below": {
+            "total": 2248,
+            "effective": 608
+          },
+          "above": {
+            "total": 1182,
+            "effective": 314
+          }
+        }
+      }
+    },
+    "downward": {
+      "total": 3265,
+      "effective": 771,
+      "indicators": {
+        "rsi": {
+          "20": {
+            "total": 25,
+            "effective": 11
+          },
+          "30": {
+            "total": 297,
+            "effective": 77
+          },
+          "40": {
+            "total": 911,
+            "effective": 234
+          },
+          "50": {
+            "total": 1061,
+            "effective": 222
+          },
+          "60": {
+            "total": 692,
+            "effective": 150
+          },
+          "70": {
+            "total": 253,
+            "effective": 66
+          },
+          "80": {
+            "total": 26,
+            "effective": 11
+          }
+        },
+        "macd": {
+          "positive": {
+            "total": 2068,
+            "effective": 456
+          },
+          "negative": {
+            "total": 1197,
+            "effective": 315
+          }
+        },
+        "bb": {
+          "below": {
+            "total": 1176,
+            "effective": 305
+          },
+          "above": {
+            "total": 2089,
+            "effective": 466
+          }
+        }
+      }
+    }
+  },
+  "weights": {
+    "upward": {
+      "rsi": {
+        "0": 1.8600867678958786,
+        "10": 1.5113204989154014,
+        "20": 1.110699293060129,
+        "30": 0.9504443355958296,
+        "40": 0.9713599078041941,
+        "50": 0.966223561355525,
+        "60": 1.1276776030368763,
+        "70": 1.2112192907228978,
+        "80": 1.240057845263919
+      },
+      "macd": {
+        "negative": 1.0335670640283203,
+        "positive": 0.9377808497045778
+      },
+      "bb": {
+        "below": 1.0061679313885181,
+        "above": 0.9882694502864735
+      }
+    },
+    "downward": {
+      "rsi": {
+        "20": 1.8632944228274968,
+        "30": 1.097900754191286,
+        "40": 1.087742977102171,
+        "50": 0.8860666649552401,
+        "60": 0.9179393176041925,
+        "70": 1.1047200135340889,
+        "80": 1.7916292527187467
+      },
+      "macd": {
+        "positive": 0.9337768779775568,
+        "negative": 1.1144105399685984
+      },
+      "bb": {
+        "below": 1.098300863795583,
+        "above": 0.9446616487201505
+      }
+    }
+  },
+  "metadata": {
+    "totalKlines": 35329,
+    "reversalPoints": 6695,
+    "upwardReversals": 3430,
+    "downwardReversals": 3265,
+    "upwardEffectiveness": 0.26880466472303205,
+    "downwardEffectiveness": 0.23614088820826953,
+    "parameters": {
+      "REVERSAL_THRESHOLD": 0.01,
+      "LOOKBACK_PERIOD": 3,
+      "FORWARD_PERIOD": 5,
+      "RSI_PERIOD": 14,
+      "MACD_FAST_PERIOD": 12,
+      "MACD_SLOW_PERIOD": 26,
+      "MACD_SIGNAL_PERIOD": 9,
+      "BB_PERIOD": 20,
+      "BB_STD_DEV": 2,
+      "OUTPUT_FILE": "models/reversal_analysis.json"
+    }
+  }
+}

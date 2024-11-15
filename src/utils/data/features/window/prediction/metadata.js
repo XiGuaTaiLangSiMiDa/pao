@@ -27,7 +27,10 @@ function formatIndicators(indicators) {
             momentum: 0,
             macd: 0,
             roc: 0,
-            bBands: null
+            bBands: null,
+            adx: { adx: 25, plusDI: 20, minusDI: 20 },
+            atr: 0,
+            cmf: 0
         };
     }
 
@@ -45,7 +48,14 @@ function formatIndicators(indicators) {
             bandwidth: clipValue(indicators.bBands.bandwidth, 0, 1),
             percentB: clipValue(indicators.bBands.percentB, 0, 100),
             deviation: clipValue(indicators.bBands.deviation, -3, 3)
-        } : null
+        } : null,
+        adx: {
+            adx: clipValue(indicators.adx?.adx || 25, 0, 100),
+            plusDI: clipValue(indicators.adx?.plusDI || 20, 0, 100),
+            minusDI: clipValue(indicators.adx?.minusDI || 20, 0, 100)
+        },
+        atr: clipValue(indicators.atr || 0, 0, 100),
+        cmf: clipValue(indicators.cmf || 0, -1, 1)
     };
 }
 
@@ -59,7 +69,7 @@ function analyzeMarketConditions(kline, indicators) {
         };
     }
 
-    const volatility = calculateVolatility(kline);
+    const volatility = calculateVolatility(kline, indicators);
     const trend = analyzeTrend(indicators);
     const strength = analyzeStrength(indicators);
 
@@ -71,13 +81,16 @@ function analyzeMarketConditions(kline, indicators) {
     };
 }
 
-function calculateVolatility(kline) {
+function calculateVolatility(kline, indicators) {
     if (!kline || !kline.high || !kline.low || !kline.open) {
         return 0;
     }
 
+    // Combine ATR and price range for better volatility measurement
     const range = (kline.high - kline.low) / kline.open;
-    return clipValue(range, 0, 1);
+    const atrComponent = indicators.atr ? (indicators.atr / kline.open) : 0;
+    
+    return clipValue((range + atrComponent) / 2, 0, 1);
 }
 
 function analyzeTrend(indicators) {
@@ -85,12 +98,19 @@ function analyzeTrend(indicators) {
         return 'neutral';
     }
 
+    // Enhanced trend analysis with ADX
+    const adxStrength = indicators.adx?.adx > 25;
+    const adxTrendUp = indicators.adx?.plusDI > indicators.adx?.minusDI;
+    const adxTrendDown = indicators.adx?.plusDI < indicators.adx?.minusDI;
+
     // Use both RSI and Stochastic RSI for trend analysis
     const isOverbought = indicators.rsi > 70 || (indicators.stochRSI?.k > 80 && indicators.stochRSI?.d > 80);
     const isOversold = indicators.rsi < 30 || (indicators.stochRSI?.k < 20 && indicators.stochRSI?.d < 20);
 
     if (isOverbought) return 'overbought';
     if (isOversold) return 'oversold';
+    if (adxStrength && adxTrendUp && indicators.macd > 0) return 'uptrend';
+    if (adxStrength && adxTrendDown && indicators.macd < 0) return 'downtrend';
     if (indicators.macd > 0 && indicators.roc > 0) return 'uptrend';
     if (indicators.macd < 0 && indicators.roc < 0) return 'downtrend';
     return 'neutral';
@@ -101,9 +121,20 @@ function analyzeStrength(indicators) {
         return 'moderate';
     }
 
+    // Enhanced strength analysis with ADX and CMF
+    const adxStrength = indicators.adx?.adx || 0;
     const momentum = Math.abs(indicators.momentum);
-    if (momentum < 0.5) return 'weak';
-    if (momentum < 1.5) return 'moderate';
+    const cmfStrength = Math.abs(indicators.cmf || 0);
+
+    // Combine multiple factors for strength assessment
+    const strengthScore = (
+        (adxStrength / 100) * 0.4 +    // 40% weight to ADX
+        (momentum / 2) * 0.4 +         // 40% weight to momentum
+        cmfStrength * 0.2              // 20% weight to CMF
+    );
+
+    if (strengthScore < 0.3) return 'weak';
+    if (strengthScore < 0.6) return 'moderate';
     return 'strong';
 }
 
@@ -115,17 +146,26 @@ function calculateRiskLevel(volatility, indicators) {
     let riskScore = 0;
     
     // Volatility contribution
-    riskScore += volatility * 40;
+    riskScore += volatility * 30;
     
     // RSI extremes
-    if (indicators.rsi > 75 || indicators.rsi < 25) riskScore += 20;
+    if (indicators.rsi > 75 || indicators.rsi < 25) riskScore += 15;
     else if (indicators.rsi > 65 || indicators.rsi < 35) riskScore += 10;
     
     // Stochastic RSI extremes
     if (indicators.stochRSI?.k > 80 || indicators.stochRSI?.k < 20) riskScore += 10;
     
     // MACD volatility
-    if (Math.abs(indicators.macd) > 1) riskScore += 20;
+    if (Math.abs(indicators.macd) > 1) riskScore += 10;
+    
+    // ADX contribution
+    if (indicators.adx?.adx > 40) riskScore += 15;
+    
+    // ATR contribution
+    if (indicators.atr > 2) riskScore += 10;
+    
+    // CMF extremes
+    if (Math.abs(indicators.cmf) > 0.3) riskScore += 10;
     
     return clipValue(riskScore / 100, 0, 1);
 }

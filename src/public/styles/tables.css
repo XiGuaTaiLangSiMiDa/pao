@@ -1,0 +1,79 @@
+/* Table styles */
+.table-container {
+    overflow-x: auto;
+}
+
+.prediction-history {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.prediction-history th,
+.prediction-history td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+.prediction-history th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+    color: #666;
+}
+
+/* Table row styles */
+.strong-buy-row {
+    background-color: rgba(76, 175, 80, 0.1);
+}
+
+.buy-row {
+    background-color: rgba(139, 195, 74, 0.1);
+}
+
+.strong-sell-row {
+    background-color: rgba(244, 67, 54, 0.1);
+}
+
+.sell-row {
+    background-color: rgba(255, 152, 0, 0.1);
+}
+
+.neutral-row {
+    background-color: rgba(158, 158, 158, 0.1);
+}
+
+.low-confidence-row {
+    background-color: rgba(96, 125, 139, 0.1);
+}
+
+/* Risk assessment table styles */
+.risk-item {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #fff3e0;
+    border-radius: 4px;
+}
+
+.risk-icon {
+    margin-right: 10px;
+}
+
+/* Value changes */
+.change-positive {
+    color: #4CAF50;
+}
+
+.change-negative {
+    color: #f44336;
+}
+
+/* Responsive table styles */
+@media (max-width: 768px) {
+    .prediction-history th,
+    .prediction-history td {
+        padding: 8px;
+        font-size: 0.9em;
+    }
+}

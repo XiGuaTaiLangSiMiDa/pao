@@ -10,8 +10,8 @@ export function generatePredictionData(klines, lookback = WindowConfig.DEFAULT_L
     validateKlineData(klines, lookback);
 
     // Calculate indicators for the window
-    const { closes, volumes } = extractPrices(klines);
-    const indicators = calculateIndicators(closes, volumes);
+    const { closes, volumes, highs, lows } = extractPrices(klines);
+    const indicators = calculateIndicators(closes, volumes, highs, lows);
     
     // Generate feature window for current k-bar
     const window = processKlineWindow(
@@ -43,7 +43,14 @@ export function generatePredictionData(klines, lookback = WindowConfig.DEFAULT_L
         macd: indicators.macd.histogram[indicators.macd.histogram.length - 1],
         momentum: indicators.momentum[indicators.momentum.length - 1],
         roc: indicators.roc[indicators.roc.length - 1],
-        bBands: indicators.bBands[indicators.bBands.length - 1]
+        bBands: indicators.bBands[indicators.bBands.length - 1],
+        adx: {
+            adx: indicators.adx.adx[indicators.adx.adx.length - 1],
+            plusDI: indicators.adx.plusDI[indicators.adx.plusDI.length - 1],
+            minusDI: indicators.adx.minusDI[indicators.adx.minusDI.length - 1]
+        },
+        atr: indicators.atr[indicators.atr.length - 1],
+        cmf: indicators.cmf[indicators.cmf.length - 1]
     };
 
     // Generate metadata with validation

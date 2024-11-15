@@ -21,7 +21,14 @@ export function processKlineWindow(klines, indicators, startIndex, endIndex) {
                 macd: indicators.macd.histogram[i],
                 momentum: indicators.momentum[i],
                 roc: indicators.roc[i],
-                bBands: indicators.bBands[i]
+                bBands: indicators.bBands[i],
+                adx: {
+                    adx: indicators.adx?.adx?.[i],
+                    plusDI: indicators.adx?.plusDI?.[i],
+                    minusDI: indicators.adx?.minusDI?.[i]
+                },
+                atr: indicators.atr[i],
+                cmf: indicators.cmf[i]
             }
         );
         window.push(featureSet);
@@ -36,7 +43,7 @@ export function processKline(currentKline, previousKline, indicators) {
         const volumePatterns = calculateVolumePatterns(currentKline, previousKline);
         
         if (!pricePatterns || !volumePatterns) {
-            return new Array(19).fill(0);
+            return new Array(22).fill(0);
         }
         
         const featureSet = normalizeFeatures(pricePatterns, volumePatterns, indicators);
@@ -46,7 +53,7 @@ export function processKline(currentKline, previousKline, indicators) {
     } catch (error) {
         console.error('Error processing kline:', error);
         console.error('Input data:', { currentKline, previousKline, indicators });
-        return new Array(19).fill(0);
+        return new Array(22).fill(0);
     }
 }
 
@@ -62,35 +69,56 @@ function normalizeFeatures(pricePatterns, volumePatterns, indicators) {
         macd: indicators?.macd ?? 0,
         momentum: indicators?.momentum ?? 0,
         roc: indicators?.roc ?? 0,
-        bBands: indicators?.bBands ?? { bandwidth: 0, percentB: 50, deviation: 0 }
+        bBands: indicators?.bBands ?? { bandwidth: 0, percentB: 50, deviation: 0 },
+        adx: {
+            adx: indicators?.adx?.adx ?? 25,
+            plusDI: indicators?.adx?.plusDI ?? 20,
+            minusDI: indicators?.adx?.minusDI ?? 20
+        },
+        atr: indicators?.atr ?? (pricePatterns.totalRange * 0.5), // Default to half the total range
+        cmf: indicators?.cmf ?? 0
     };
 
-    return [
-        // Price patterns - Allow negative values for directional features
-        pricePatterns.bodySize || 0,                    // Can be negative for bearish candles
-        pricePatterns.upperShadow || 0,                 // Always positive
-        pricePatterns.lowerShadow || 0,                 // Always positive
-        pricePatterns.totalRange || 0,                  // Always positive
-        pricePatterns.priceChange || 0,                 // Can be negative for price drops
-        Math.min(Math.max(pricePatterns.volatility || 0, 0), 1),  // Always positive, normalized 0-1
-        pricePatterns.bodyToShadowRatio || 0,          // Can be negative for bearish candles
+    // Normalize features with safety checks
+    const features = [
+        // Price patterns
+        pricePatterns.bodySize || 0,
+        pricePatterns.upperShadow || 0,
+        pricePatterns.lowerShadow || 0,
+        pricePatterns.totalRange || 0,
+        pricePatterns.priceChange || 0,
+        Math.min(Math.max(pricePatterns.volatility || 0, 0), 1),
+        pricePatterns.bodyToShadowRatio || 0,
         
         // Volume patterns
-        volumePatterns.volumeChange || 0,               // Can be negative for volume drops
-        volumePatterns.volumePriceRatio || 0,          // Can be negative for inverse relationships
+        volumePatterns.volumeChange || 0,
+        volumePatterns.volumePriceRatio || 0,
         
         // Technical indicators
-        (safeIndicators.rsi - 50) / 50,                // Normalized to [-1, 1] centered at 0
-        (safeIndicators.stochRSI.k - 50) / 50,         // Normalized to [-1, 1]
-        (safeIndicators.stochRSI.d - 50) / 50,         // Normalized to [-1, 1]
-        Math.log1p(Math.abs(safeIndicators.obv)) * Math.sign(safeIndicators.obv) / 20,  // Allows negative
-        safeIndicators.macd / 100,                     // Allows negative
-        safeIndicators.momentum / 100,                 // Allows negative
-        safeIndicators.roc / 100,                      // Allows negative
+        (safeIndicators.rsi - 50) / 50,
+        (safeIndicators.stochRSI.k - 50) / 50,
+        (safeIndicators.stochRSI.d - 50) / 50,
+        Math.log1p(Math.abs(safeIndicators.obv)) * Math.sign(safeIndicators.obv) / 20,
+        safeIndicators.macd / Math.max(Math.abs(safeIndicators.macd), 0.01),
+        safeIndicators.momentum / Math.max(Math.abs(safeIndicators.momentum), 0.01),
+        safeIndicators.roc / Math.max(Math.abs(safeIndicators.roc), 0.01),
         
         // Bollinger Bands features
-        (safeIndicators.bBands?.bandwidth || 0) / 100,           // Normalized positive
-        ((safeIndicators.bBands?.percentB || 50) - 50) / 50,    // Centered at 0, range [-1, 1]
-        (safeIndicators.bBands?.deviation || 0) / 2              // Allows negative
-    ].map(value => Math.min(Math.max(value, -1), 1));  // Final clipping to ensure [-1, 1] range
+        Math.min(safeIndicators.bBands.bandwidth / 100, 1),
+        ((safeIndicators.bBands.percentB || 50) - 50) / 50,
+        safeIndicators.bBands.deviation / Math.max(Math.abs(safeIndicators.bBands.deviation), 0.01),
+        
+        // New indicators with safer normalization
+        Math.min(safeIndicators.adx.adx / 100, 1),
+        Math.min((safeIndicators.atr / (pricePatterns.totalRange || 1)) * 2 - 1, 1),
+        Math.min(Math.max(safeIndicators.cmf, -1), 1)
+    ];
+
+    // Final safety check and clipping
+    return features.map(value => {
+        if (isNaN(value) || !isFinite(value)) {
+            return 0;
+        }
+        return Math.min(Math.max(value, -1), 1);
+    });
 }

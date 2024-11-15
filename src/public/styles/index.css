@@ -1,0 +1,14 @@
+/* Import all CSS modules */
+@import 'base.css';
+@import 'indicators.css';
+@import 'signals.css';
+@import 'tables.css';
+
+/* Widget styles */
+#tradingview-widget {
+    height: 500px;
+    margin: 20px 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}

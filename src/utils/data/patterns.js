@@ -66,8 +66,8 @@ export function calculateVolumePatterns(kline, prevKline) {
 
 // Validate feature set
 export function validateFeatureSet(features, index) {
-    if (!Array.isArray(features) || features.length !== 19) {  // Updated from 16 to 19
-        throw new Error(`Invalid features at position ${index}: expected 19 features, got ${features?.length}`);
+    if (!Array.isArray(features) || features.length !== 22) {  // Updated to match hyperparameters.featureSize
+        throw new Error(`Invalid features at position ${index}: expected 22 features, got ${features?.length}`);
     }
     
     features.forEach((value, j) => {
