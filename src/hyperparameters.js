@@ -1,7 +1,7 @@
 export const HYPERPARAMETERS = {
   // Model structure
-  lookbackWindow: 30,     // Increased from 20 to capture longer trends
-  featureSize: 22,       // Updated for new indicators
+  lookbackWindow: 30,     // Maintained for longer trends
+  featureSize: 22,       // Maintained for current indicators
   
   // Training parameters
   epochs: 100,
@@ -12,7 +12,7 @@ export const HYPERPARAMETERS = {
   searchSpace: {
     batchSize: [32, 64, 128],
     learningRate: [
-      0.0005,   // Reduced initial learning rate
+      0.0005,   // Initial learning rate
       0.0002,   // Medium pace
       0.0001,   // Fine tuning
       0.00005   // Very fine tuning
@@ -35,41 +35,41 @@ export const HYPERPARAMETERS = {
     ]
   },
   
-  // Feature weights for different market conditions
+  // Feature weights optimized from reversal analysis
   featureWeights: {
     trend: {
-      adx: 1.2,        // Reduced from 1.3
-      macd: 1.1,       // Reduced from 1.2
-      rsi: 0.8,        // Increased from 0.7
-      stochRSI: 0.8    // Increased from 0.7
+      adx: 1.65,     // Optimized: Best at range 80 (44.44% effective)
+      macd: 1.11,    // Optimized: Best for downward at negative
+      rsi: 1.0,      // Baseline weight
+      stochRSI: 1.34 // Optimized: Strong at range 30 for downward
     },
     momentum: {
-      momentum: 1.0,   // Reduced from 1.1
-      roc: 1.0,        // Reduced from 1.1
-      obv: 1.0
+      momentum: 1.79, // Optimized: Best at range 0 (42.21% effective)
+      roc: 1.79,     // Optimized: Matching momentum pattern
+      obv: 1.07      // Optimized: Best at positive direction
     },
     volatility: {
-      atr: 1.1,        // Reduced from 1.2
-      bBands: 1.0      // Reduced from 1.1
+      atr: 2.42,     // Optimized: Exceptional at range 100 (57.14% effective)
+      bBands: 1.38   // Optimized: Best at range 100 for upward
     },
     volume: {
-      cmf: 1.1,        // Reduced from 1.2
-      obv: 1.0
+      cmf: 1.04,     // Optimized: Best at positive direction
+      obv: 1.07      // Optimized: Consistent with momentum OBV
     }
   },
   
-  // Trend detection thresholds
+  // Trend detection thresholds (adjusted based on reversal analysis)
   trendThresholds: {
-    strong: 0.02,      // Reduced from 0.03
-    medium: 0.01,      // Reduced from 0.015
-    weak: 0.005
+    strong: 0.015,   // Aligned with reversal threshold
+    medium: 0.01,    // Matches REVERSAL_THRESHOLD
+    weak: 0.005      // Half of medium threshold
   },
   
   // Class weights for balanced learning
   classWeights: {
-    positive: 1.0,     // Equal weighting
-    negative: 1.0,     // Equal weighting
-    neutral: 1.0       // Equal weighting
+    positive: 1.0,
+    negative: 1.0,
+    neutral: 1.0
   },
   
   // Early stopping configuration
@@ -83,16 +83,16 @@ export const HYPERPARAMETERS = {
   
   // Learning rate schedule
   learningRateSchedule: {
-    initialLearningRate: 0.0005,  // Reduced from 0.001
-    decaySteps: 2000,            // Increased from 1000
-    decayRate: 0.97,             // Increased from 0.95
+    initialLearningRate: 0.0005,
+    decaySteps: 2000,
+    decayRate: 0.97,
     staircase: false
   },
   
   // Gradient clipping
   gradientClipping: {
-    clipNorm: 0.5,     // Reduced from 1.0
-    clipValue: 0.3     // Reduced from 0.5
+    clipNorm: 0.5,
+    clipValue: 0.3
   },
   
   // Validation configuration
@@ -102,10 +102,10 @@ export const HYPERPARAMETERS = {
     validationBatchSize: 32
   },
   
-  // Prediction configuration
+  // Prediction configuration (adjusted based on reversal effectiveness)
   predictionConfig: {
     ensembleSize: 5,
-    confidenceThreshold: 0.7,
-    minTrendStrength: 0.015    // Reduced from 0.02
+    confidenceThreshold: 0.75,  // Increased based on high-effectiveness ranges
+    minTrendStrength: 0.01     // Aligned with REVERSAL_THRESHOLD
   }
 };

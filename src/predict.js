@@ -4,9 +4,96 @@ import { WindowConfig } from './utils/data/features/window/base/types.js';
 import { loadModel } from './utils/model/modelLoader.js';
 import { analyzeTechnicalIndicators } from './utils/analysis/technicalAnalysis.js';
 import { calculateConfidence, generateSignal } from './utils/prediction/confidenceCalculator.js';
+import { HYPERPARAMETERS } from './hyperparameters.js';
 import fs from 'fs';
 
 const PREDICTION_HISTORY_FILE = './models/prediction_history.json';
+
+// Analyze indicator effectiveness based on ranges
+function analyzeIndicatorRanges(indicators) {
+    const analysis = {
+        trend: 0,
+        momentum: 0,
+        volatility: 0,
+        volume: 0
+    };
+
+    // Trend indicators
+    if (indicators.adx) {
+        // ADX effectiveness increases at higher ranges
+        if (indicators.adx.adx >= 80) analysis.trend += 1.65;  // 44.44% effective
+        else if (indicators.adx.adx >= 60) analysis.trend += 1.59;  // ~35% effective
+        else if (indicators.adx.adx >= 30) analysis.trend += 1.09;  // ~25% effective
+    }
+
+    // MACD effectiveness
+    if (indicators.macd) {
+        const macdValue = indicators.macd.histogram;
+        analysis.trend += (macdValue < 0) ? 1.11 : 0.93;  // More effective for negative values
+    }
+
+    // Momentum indicators
+    if (indicators.momentum) {
+        const momValue = Math.abs(indicators.momentum);
+        if (momValue <= 10) analysis.momentum += 1.79;  // Most effective at range 0-10
+        else if (momValue >= 90) analysis.momentum += 1.23;  // Also effective at high ranges
+    }
+
+    // Volatility/ATR effectiveness
+    if (indicators.atr) {
+        const normalizedATR = indicators.atr / indicators.price;
+        if (normalizedATR >= 0.02) analysis.volatility += 2.42;  // 57.14% effective at highest range
+        else if (normalizedATR >= 0.015) analysis.volatility += 1.62;  // ~38% effective
+        else if (normalizedATR >= 0.01) analysis.volatility += 1.09;  // ~25% effective
+    }
+
+    // Volume indicators
+    if (indicators.cmf) {
+        analysis.volume += indicators.cmf > 0 ? 1.04 : 0.93;
+    }
+    if (indicators.obv) {
+        analysis.volume += indicators.obv > 0 ? 1.07 : 0.82;
+    }
+
+    return analysis;
+}
+
+// Detect potential reversal patterns
+function detectReversalPattern(metadata) {
+    const { indicators, analysis } = metadata;
+    let reversalScore = 0;
+    let reversalType = null;
+
+    // Check RSI extremes
+    if (indicators.rsi <= 30) {
+        reversalScore += 1;
+        reversalType = 'upward';
+    } else if (indicators.rsi >= 70) {
+        reversalScore += 1;
+        reversalType = 'downward';
+    }
+
+    // Check ADX strength
+    if (indicators.adx?.adx >= 60) {
+        reversalScore += 1;
+    }
+
+    // Check volume confirmation
+    if (Math.abs(indicators.cmf) >= 0.15) {
+        reversalScore += 1;
+    }
+
+    // Check volatility expansion
+    if (analysis.volatility >= 1.5) {
+        reversalScore += 1;
+    }
+
+    return {
+        score: reversalScore,
+        type: reversalType,
+        strength: reversalScore / 4  // Normalize to 0-1 range
+    };
+}
 
 export async function makePrediction() {
     try {
@@ -27,9 +114,17 @@ export async function makePrediction() {
             throw new Error('Invalid metadata structure from prediction data');
         }
 
-        // Analyze technical indicators
+        // Analyze technical indicators with optimized weights
         const analysis = analyzeTechnicalIndicators(metadata.indicators);
         console.log('\nTechnical Analysis:', analysis.signals.join('\n'));
+
+        // Analyze indicator ranges effectiveness
+        const rangeEffectiveness = analyzeIndicatorRanges(metadata.indicators);
+        console.log('\nIndicator Range Effectiveness:', rangeEffectiveness);
+
+        // Detect potential reversal patterns
+        const reversalAnalysis = detectReversalPattern(metadata);
+        console.log('\nReversal Analysis:', reversalAnalysis);
 
         const latestFeature = features[0];
         const currentPrice = metadata.price.close;
@@ -45,7 +140,7 @@ export async function makePrediction() {
         const predictedChange = await prediction.data();
         console.log('Prediction completed');
         
-        // Calculate confidence score
+        // Calculate confidence score with enhanced indicators
         const confidence = calculateConfidence(
             predictedChange[0],
             metadata.indicators.rsi,
@@ -54,6 +149,9 @@ export async function makePrediction() {
             metadata.indicators.cmf
         );
 
+        // Adjust confidence based on reversal pattern strength
+        const adjustedConfidence = confidence * (1 + reversalAnalysis.strength * 0.2);
+
         // Clean up tensors
         preprocessedFeatures.dispose();
         prediction.dispose();
@@ -61,18 +159,18 @@ export async function makePrediction() {
         // Calculate predicted price
         const predictedPrice = currentPrice * (1 + predictedChange[0]/100);
         
-        // Determine prediction direction and signal
-        const direction = predictedChange[0] > 0 ? 'UP' : predictedChange[0] < 0 ? 'DOWN' : 'NEUTRAL';
-        const signal = generateSignal(predictedChange[0], confidence);
+        // Generate signal with enhanced confidence
+        const signal = generateSignal(predictedChange[0], adjustedConfidence);
 
-        // Create prediction record
+        // Create prediction record with enhanced metadata
         const predictionRecord = {
             timestamp: Date.now(),
             predictedChange: predictedChange[0],
             predictedPrice,
-            direction,
-            confidence,
+            confidence: adjustedConfidence,
             signal,
+            reversal: reversalAnalysis,
+            rangeEffectiveness,
             modelInfo: {
                 trainedAt: parameters.timestamp,
                 hyperparameters: parameters.hyperparameters
@@ -119,7 +217,7 @@ export async function makePrediction() {
         console.error('Error stack:', error.stack);
         if (error.message.includes('tensor')) {
             console.error('Tensor shape error. Please check the input data format.');
-            console.error(`Expected shape: [null,${WindowConfig.DEFAULT_LOOKBACK},16]`);
+            console.error(`Expected shape: [null,${WindowConfig.DEFAULT_LOOKBACK},${HYPERPARAMETERS.featureSize}]`);
         }
         throw error;
     }
