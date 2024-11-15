@@ -19,6 +19,106 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Intervals set up successfully');
 });
 
+// Calculate risk assessment based on technical indicators
+function calculateRiskAssessment(data) {
+    const risks = [];
+    const indicators = data.metadata.indicators;
+    const analysis = data.metadata.analysis;
+    
+    // Volatility Risk (based on ATR)
+    const atrRisk = indicators.atr / data.metadata.price.close * 100;
+    if (atrRisk > 5) {
+        risks.push({
+            level: 'high',
+            message: `高波动风险: ATR指标 (${atrRisk.toFixed(2)}%) 显示市场波动性较大`
+        });
+    }
+
+    // Trend Reversal Risk
+    const upwardProb = data.metadata.analysis.upwardReversal?.probability || 0;
+    const downwardProb = data.metadata.analysis.downwardReversal?.probability || 0;
+    if (upwardProb > 0.7 || downwardProb > 0.7) {
+        risks.push({
+            level: 'medium',
+            message: `趋势反转风险: ${upwardProb > downwardProb ? '上涨' : '下跌'}反转概率 ${(Math.max(upwardProb, downwardProb) * 100).toFixed(2)}%`
+        });
+    }
+
+    // Overbought/Oversold Risk (RSI)
+    if (indicators.rsi > 70) {
+        risks.push({
+            level: 'high',
+            message: `超买风险: RSI (${indicators.rsi.toFixed(2)}) 处于超买区域`
+        });
+    } else if (indicators.rsi < 30) {
+        risks.push({
+            level: 'high',
+            message: `超卖风险: RSI (${indicators.rsi.toFixed(2)}) 处于超卖区域`
+        });
+    }
+
+    // Volume Risk (CMF)
+    if (indicators.cmf < -0.2) {
+        risks.push({
+            level: 'high',
+            message: `资金流出风险: CMF (${indicators.cmf.toFixed(2)}) 显示大量资金流出`
+        });
+    }
+
+    // Trend Strength Risk (ADX)
+    if (indicators.adx.adx > 40) {
+        risks.push({
+            level: 'medium',
+            message: `趋势过热风险: ADX (${indicators.adx.adx.toFixed(2)}) 显示极强趋势，可能即将耗尽`
+        });
+    }
+
+    // Model Confidence Risk
+    if (data.confidence < 60) {
+        risks.push({
+            level: 'medium',
+            message: `预测不确定性: 模型置信度较低 (${data.confidence}%)`
+        });
+    }
+
+    return risks;
+}
+
+// Update risk assessment display
+function updateRiskAssessment(risks) {
+    const riskContent = document.getElementById('risk-content');
+    if (!riskContent) return;
+
+    if (risks.length === 0) {
+        riskContent.innerHTML = '<p class="risk-level low">当前市场风险较低</p>';
+        return;
+    }
+
+    let html = '';
+    const highRisks = risks.filter(r => r.level === 'high');
+    const mediumRisks = risks.filter(r => r.level === 'medium');
+
+    if (highRisks.length > 0) {
+        html += '<p class="risk-level high">高风险警告</p>';
+        html += '<ul class="risk-list high">';
+        highRisks.forEach(risk => {
+            html += `<li>${risk.message}</li>`;
+        });
+        html += '</ul>';
+    }
+
+    if (mediumRisks.length > 0) {
+        html += '<p class="risk-level medium">中等风险提示</p>';
+        html += '<ul class="risk-list medium">';
+        mediumRisks.forEach(risk => {
+            html += `<li>${risk.message}</li>`;
+        });
+        html += '</ul>';
+    }
+
+    riskContent.innerHTML = html;
+}
+
 // Update prediction history table
 function updatePredictionHistory(newPrediction) {
     // Add new prediction to history
@@ -92,6 +192,10 @@ async function fetchPrediction() {
         
         // Update prediction history
         updatePredictionHistory(data);
+        
+        // Calculate and update risk assessment
+        const risks = calculateRiskAssessment(data);
+        updateRiskAssessment(risks);
         
         // Update prediction values
         document.getElementById('current-price').textContent = 
