@@ -5,7 +5,7 @@
       "bullish": 147,
       "bearish": 25,
       "averageStockRSI": 24.311356511389846,
-      "averageOBVDivergence": 1.2874836618950645,
+      "averageOBVDivergence": 1.2874836618940553,
       "patterns": {
         "hammer": 50,
         "shooting_star": 16,
@@ -17,7 +17,7 @@
       "bullish": 119,
       "bearish": 35,
       "averageStockRSI": 29.273075475641207,
-      "averageOBVDivergence": 0.986387051977422,
+      "averageOBVDivergence": 0.986387051977412,
       "patterns": {
         "hammer": 38,
         "shooting_star": 19
@@ -104,18 +104,15 @@
   "warningSequences": [
     {
       "timestamp": 1704384000000,
-      "date": "2024-01-05 00:00:00",
       "sequence": [
         {
           "timeframe": "30m",
           "type": "bullish",
+          "stockRSI": 12.004928114771882,
+          "obvDivergence": 0.6907450191681511,
+          "macdSignal": "divergence",
+          "strength": 1.3743138183978707,
           "pattern": "none",
-          "indicators": {
-            "stockRSI": 12.004928114771882,
-            "obvDivergence": 0.6907450191681624,
-            "macdSignal": "divergence"
-          },
-          "strength": 1.3743138183978933,
           "confidence": 0.9806779024337439,
           "confirmationScore": 0.46153846153846156,
           "suggestedLeverage": 2.6,
@@ -127,18 +124,15 @@
     },
     {
       "timestamp": 1706097600000,
-      "date": "2024-01-24 20:00:00",
       "sequence": [
         {
           "timeframe": "30m",
           "type": "bullish",
+          "stockRSI": 6.629261818949514,
+          "obvDivergence": 0.6173277699918941,
+          "macdSignal": "divergence",
+          "strength": 0.7364760505902648,
           "pattern": "hammer",
-          "indicators": {
-            "stockRSI": 6.629261818949514,
-            "obvDivergence": 0.6173277699918758,
-            "macdSignal": "divergence"
-          },
-          "strength": 0.7364760505902429,
           "confidence": 1.156095905815162,
           "confirmationScore": 0.46153846153846156,
           "suggestedLeverage": 3.1,
@@ -152,8 +146,8 @@
   "trendProbabilities": {
     "15m": {
       "direction": "bullish",
-      "probability": 44.4948500531843,
-      "confidence": 0.5249669660805488,
+      "probability": 43.363569965380385,
+      "confidence": 0.40055303271310605,
       "recommendedLeverage": 0,
       "stopLoss": 0,
       "profitTarget": 0,
@@ -162,7 +156,7 @@
     },
     "30m": {
       "direction": "bullish",
-      "probability": 39.09776799314846,
+      "probability": 39.09805512059486,
       "confidence": 0.5348593167713842,
       "recommendedLeverage": 3.1,
       "stopLoss": 209.52,
