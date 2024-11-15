@@ -4,6 +4,8 @@ import { fileURLToPath } from 'url';
 import { makePrediction } from './predict.js';
 import { analyzeTrend } from './scripts/analysis/trendAnalyzer.js';
 import { klineCache } from './utils/cache/cache.js';
+import { TimeframeAnalyzer } from './scripts/timeframe_analysis/analyzer.js';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,11 +13,97 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = 9999;
 
+// Enable CORS
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    next();
+});
+
 // Parse JSON bodies
 app.use(express.json());
 
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Timeframe analysis endpoint
+app.get('/api/timeframe-analysis', async (req, res) => {
+    try {
+        // 获取最新的k线数据
+        const klineData = await klineCache.update("SOLUSDT");
+        
+        if (!klineData || klineData.length === 0) {
+            throw new Error('No kline data available for analysis');
+        }
+
+        // 验证k线数据
+        const validKlines = klineData.filter(k => 
+            k && k.openTime && k.open && k.high && k.low && k.close && k.volume &&
+            !isNaN(parseFloat(k.high)) && !isNaN(parseFloat(k.low)) && 
+            !isNaN(parseFloat(k.close)) && !isNaN(parseFloat(k.volume))
+        );
+
+        // 初始化分析器
+        const analyzer = new TimeframeAnalyzer(validKlines);
+
+        // 执行分析
+        analyzer.calculateIndicators();
+        analyzer.detectReversals();
+        analyzer.analyzeWarningSequences();
+
+        // 格式化结果
+        const results = {
+            reversalStatistics: {},
+            warningSequences: [],
+            trendProbabilities: {}
+        };
+
+        // 计算反转统计
+        for (const [timeframe, reversals] of Object.entries(analyzer.reversalPoints)) {
+            results.reversalStatistics[timeframe] = {
+                total: reversals.length,
+                bullish: reversals.filter(r => r.type === 'bullish').length,
+                bearish: reversals.filter(r => r.type === 'bearish').length,
+                averageStockRSI: reversals.length > 0 ?
+                    reversals.reduce((sum, r) => sum + r.stockRSI, 0) / reversals.length : 0,
+                averageOBVDivergence: reversals.length > 0 ?
+                    reversals.reduce((sum, r) => sum + Math.abs(r.obvDivergence), 0) / reversals.length : 0,
+                patterns: reversals.reduce((acc, r) => {
+                    if (r.pattern !== 'none') {
+                        acc[r.pattern] = (acc[r.pattern] || 0) + 1;
+                    }
+                    return acc;
+                }, {})
+            };
+        }
+
+        // 格式化警告序列
+        results.warningSequences = Object.entries(analyzer.warningSequences)
+            .map(([timestamp, warnings]) => ({
+                timestamp: parseInt(timestamp),
+                sequence: warnings
+            }));
+
+        // 计算趋势概率
+        results.trendProbabilities = analyzer.calculateTrendProbabilities();
+
+        // 保存结果到文件（用于调试和历史记录）
+        fs.writeFileSync(
+            path.join(__dirname, '../models/timeframe_analysis.json'),
+            JSON.stringify(results, null, 2)
+        );
+
+        res.json(results);
+    } catch (error) {
+        console.error('Error in timeframe analysis:', error);
+        res.status(500).json({ 
+            error: 'Failed to perform timeframe analysis',
+            message: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+});
 
 // Trend analysis endpoint
 app.get('/trend', async (req, res) => {
