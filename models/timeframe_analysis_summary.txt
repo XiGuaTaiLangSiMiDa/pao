@@ -84,61 +84,53 @@ Reversal Statistics by Timeframe:
 
 Warning Sequence Analysis:
 ------------------------
-Total Sequences Found: 421
+Total Sequences Found: 2
 
 Most Common Warning Sequences:
-  15m:bullish: 138 occurrences
-  30m:bullish: 106 occurrences
-  1h:bullish: 40 occurrences
-  30m:bearish: 33 occurrences
-  15m:bearish: 23 occurrences
+  30m:bullish: 2 occurrences
 
 Most Recent Warning Sequences:
 
-  2024-11-06 20:00:00:
-    15m: bullish (RSI: 21.58, Confidence: 73.9%)
+  2024-01-05 00:00:00:
+    30m: bullish (RSI: 12.00, Confidence: 98.1%)
+      Leverage: 2.6x, Stop Loss: 209.52, Target: 220.18
 
-  2024-11-06 20:15:00:
-    15m: bullish (RSI: 16.15, Confidence: 63.9%)
-
-  2024-11-07 09:15:00:
-    15m: bullish (RSI: 8.86, Confidence: 88.2%)
-
-  2024-11-10 13:30:00:
-    15m: bullish (RSI: 31.71, Confidence: 48.8%)
-
-  2024-11-11 00:00:00:
-    15m: bullish (RSI: 0.00, Confidence: 64.2%)
+  2024-01-24 20:00:00:
+    30m: bullish (RSI: 6.63, Confidence: 115.6%)
+      Leverage: 3.1x, Stop Loss: 209.52, Target: 220.18
 
 Future Trend Probabilities:
 -------------------------
 
 15m:
   Direction: bullish
-  Probability: 44.4%
-  Confidence: 54.5%
+  Probability: 44.5%
+  Confidence: 52.5%
 
 30m:
   Direction: bullish
-  Probability: 39.4%
-  Confidence: 55.8%
+  Probability: 39.1%
+  Confidence: 53.5%
+  Recommended Leverage: 3.1x
+  Risk Level: medium
+  Volatility: 12.0%
 
 1h:
   Direction: bullish
   Probability: 44.9%
-  Confidence: 60.3%
+  Confidence: 54.9%
 
 4h:
   Direction: bearish
   Probability: 44.9%
-  Confidence: 83.7%
+  Confidence: 65.7%
 
 8h:
   Direction: bearish
   Probability: 26.3%
-  Confidence: 70.0%
+  Confidence: 52.5%
 
 1d:
   Direction: bullish
   Probability: 43.3%
-  Confidence: 57.0%
+  Confidence: 48.5%

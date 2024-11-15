@@ -628,5 +628,26 @@
       "totalPredictions": 194
     },
     "timestamp": "2024-11-15T10:21:38.224Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        192,
+        96
+      ],
+      "dropoutRate": 0.4,
+      "l2Regularization": 0.00005
+    },
+    "score": 0.051022892952466446,
+    "evaluation": {
+      "mse": 0.026693879055900843,
+      "mae": 0.1344844711003537,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T10:29:28.353Z"
   }
 ]

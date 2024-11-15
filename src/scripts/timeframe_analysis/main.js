@@ -2,7 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import moment from 'moment';
 import { fileURLToPath } from 'url';
-import { TimeframeAnalyzer, TIMEFRAMES } from './analyzer.js';
+import { TimeframeAnalyzer } from './analyzer.js';
+import { TIMEFRAMES } from './config.js';
 import { klineCache } from '../../utils/cache/cache.js';
 import { CacheStorage } from '../../utils/cache/storage.js';
 
@@ -52,10 +53,17 @@ function formatResults(analyzer) {
         pattern: w.pattern,
         indicators: {
           stockRSI: w.stockRSI,
-          obvDivergence: w.obvDivergence
+          obvDivergence: w.obvDivergence,
+          macdSignal: w.macdSignal
         },
         strength: w.strength,
-        confidence: w.confidence
+        confidence: w.confidence,
+        confirmationScore: w.confirmationScore,
+        // 合约相关信息
+        suggestedLeverage: w.suggestedLeverage,
+        stopLoss: w.stopLoss,
+        profitTarget: w.profitTarget,
+        volatility: w.volatility
       }))
     }));
 
@@ -140,6 +148,9 @@ function generateSummary(results) {
         summary += `\n  ${s.date}:\n`;
         s.sequence.forEach(w => {
           summary += `    ${w.timeframe}: ${w.type} (RSI: ${w.indicators.stockRSI.toFixed(2)}, Confidence: ${(w.confidence * 100).toFixed(1)}%)\n`;
+          if (w.suggestedLeverage) {
+            summary += `      Leverage: ${w.suggestedLeverage}x, Stop Loss: ${w.stopLoss}, Target: ${w.profitTarget}\n`;
+          }
         });
       });
   }
@@ -152,6 +163,11 @@ function generateSummary(results) {
     summary += `  Direction: ${prob.direction}\n`;
     summary += `  Probability: ${prob.probability.toFixed(1)}%\n`;
     summary += `  Confidence: ${(prob.confidence * 100).toFixed(1)}%\n`;
+    if (prob.recommendedLeverage) {
+      summary += `  Recommended Leverage: ${prob.recommendedLeverage}x\n`;
+      summary += `  Risk Level: ${prob.risk}\n`;
+      summary += `  Volatility: ${(prob.volatility * 100).toFixed(1)}%\n`;
+    }
   }
 
   return summary;
