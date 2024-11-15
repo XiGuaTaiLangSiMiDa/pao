@@ -8,12 +8,26 @@ import { WindowConfig } from './utils/data/features/window/base/types.js';
 import moment from 'moment';
 import fs from 'fs';
 
-// Analyze label distribution
-function analyzeLabelDistribution(labels) {
+// Analyze label distribution with reversal focus
+function analyzeLabelDistribution(labels, features) {
   const positive = labels.filter(l => l > 0).length;
   const negative = labels.filter(l => l < 0).length;
   const neutral = labels.filter(l => l === 0).length;
   const total = labels.length;
+  
+  // Analyze potential reversals
+  const reversals = features.reduce((acc, feature, idx) => {
+    if (idx === 0) return acc;
+    const prevLabel = labels[idx - 1];
+    const currLabel = labels[idx];
+    
+    // Check for trend reversal
+    if (Math.sign(prevLabel) !== Math.sign(currLabel) && Math.abs(currLabel) > HYPERPARAMETERS.trendThresholds.medium) {
+      if (currLabel > 0) acc.upward++;
+      else if (currLabel < 0) acc.downward++;
+    }
+    return acc;
+  }, { upward: 0, downward: 0 });
   
   return {
     positive: {
@@ -28,8 +42,97 @@ function analyzeLabelDistribution(labels) {
       count: neutral,
       percentage: (neutral / total * 100).toFixed(2)
     },
+    reversals: {
+      upward: {
+        count: reversals.upward,
+        percentage: (reversals.upward / total * 100).toFixed(2)
+      },
+      downward: {
+        count: reversals.downward,
+        percentage: (reversals.downward / total * 100).toFixed(2)
+      }
+    },
     total
   };
+}
+
+// Validate feature effectiveness based on reversal analysis
+function validateFeatureEffectiveness(features, labels) {
+  const effectiveness = {
+    trend: { positive: 0, negative: 0 },
+    momentum: { positive: 0, negative: 0 },
+    volatility: { positive: 0, negative: 0 },
+    volume: { positive: 0, negative: 0 }
+  };
+
+  features.forEach((windowFeatures, idx) => {
+    const label = labels[idx];
+    if (label === 0) return;
+
+    // Get the latest feature set from the window
+    const feature = windowFeatures[windowFeatures.length - 1];
+    const isPositive = label > 0;
+    
+    // Check each feature group's effectiveness
+    Object.keys(effectiveness).forEach(group => {
+      const aligned = isFeatureAligned(feature, group, isPositive);
+      if (aligned) {
+        effectiveness[group][isPositive ? 'positive' : 'negative']++;
+      }
+    });
+  });
+
+  return effectiveness;
+}
+
+// Helper to check feature alignment with price movement
+function isFeatureAligned(feature, group, isPositive) {
+  if (!feature) return false;
+
+  // Feature indices based on processKline normalization
+  const FEATURE_INDICES = {
+    RSI: 9,
+    STOCH_RSI_K: 10,
+    MACD: 13,
+    MOMENTUM: 14,
+    ROC: 15,
+    BBANDS_BANDWIDTH: 16,
+    BBANDS_PERCENT_B: 17,
+    ADX: 19,
+    ATR: 20,
+    CMF: 21
+  };
+
+  switch (group) {
+    case 'trend':
+      // ADX > 25 and MACD alignment
+      return (
+        feature[FEATURE_INDICES.ADX] > 0.25 && 
+        Math.sign(feature[FEATURE_INDICES.MACD]) === (isPositive ? 1 : -1)
+      );
+
+    case 'momentum':
+      // Momentum and ROC alignment
+      return (
+        Math.abs(feature[FEATURE_INDICES.MOMENTUM]) > 0.2 &&
+        Math.sign(feature[FEATURE_INDICES.MOMENTUM]) === (isPositive ? 1 : -1) &&
+        Math.sign(feature[FEATURE_INDICES.ROC]) === (isPositive ? 1 : -1)
+      );
+
+    case 'volatility':
+      // ATR expansion and Bollinger Band width
+      return (
+        feature[FEATURE_INDICES.ATR] > 0.3 ||
+        feature[FEATURE_INDICES.BBANDS_BANDWIDTH] > 0.5
+      );
+
+    case 'volume':
+      // CMF direction alignment
+      return Math.sign(feature[FEATURE_INDICES.CMF]) === (isPositive ? 1 : -1);
+
+    default:
+      return false;
+  }
 }
 
 async function trainModel() {
@@ -57,25 +160,39 @@ async function trainModel() {
 
     console.log(`Generated ${features.length} feature windows`);
 
-    // Analyze and log label distribution
-    const distribution = analyzeLabelDistribution(labels);
+    // Analyze and log label distribution with reversal focus
+    const distribution = analyzeLabelDistribution(labels, features);
     console.log('\nLabel Distribution:');
     console.log(`Positive changes: ${distribution.positive.count} (${distribution.positive.percentage}%)`);
     console.log(`Negative changes: ${distribution.negative.count} (${distribution.negative.percentage}%)`);
     console.log(`Neutral changes: ${distribution.neutral.count} (${distribution.neutral.percentage}%)`);
+    console.log('\nReversal Distribution:');
+    console.log(`Upward reversals: ${distribution.reversals.upward.count} (${distribution.reversals.upward.percentage}%)`);
+    console.log(`Downward reversals: ${distribution.reversals.downward.count} (${distribution.reversals.downward.percentage}%)`);
 
-    // Adjust class weights based on distribution if needed
+    // Validate feature effectiveness
+    console.log('\nAnalyzing feature effectiveness...');
+    const effectiveness = validateFeatureEffectiveness(features, labels);
+    console.log('Feature group effectiveness:', effectiveness);
+
+    // Adjust class weights based on distribution and reversal patterns
     const positiveWeight = 1.0;
     const negativeWeight = distribution.positive.count / distribution.negative.count;
-    console.log('\nUsing class weights:', { positive: positiveWeight, negative: negativeWeight });
+    const reversalBoost = 1.2; // Increase weight for reversal patterns
+    console.log('\nUsing class weights:', { 
+      positive: positiveWeight, 
+      negative: negativeWeight,
+      reversalBoost 
+    });
 
     // Update hyperparameters with calculated weights
     HYPERPARAMETERS.classWeights = {
       positive: positiveWeight,
-      negative: negativeWeight
+      negative: negativeWeight,
+      reversalBoost
     };
 
-    // Preprocess data
+    // Preprocess data with optimized weights
     console.log('Preprocessing data...');
     const featuresTensor = await preprocessFeatures(features);
     const labelsTensor = await preprocessLabels(labels);
@@ -95,7 +212,7 @@ async function trainModel() {
     console.log('\nStarting hyperparameter search...');
     const { bestParams, bestModel, bestScore, allResults } = await gridSearch(xTrain, yTrain, xTest, yTest);
 
-    // Save training results
+    // Save training results with enhanced metadata
     console.log('\nSaving final results...');
     const results = {
       bestParameters: bestParams,
@@ -107,6 +224,7 @@ async function trainModel() {
         testingSamples: features.length - splitIndex,
         featureShape: featuresTensor.shape,
         labelDistribution: distribution,
+        featureEffectiveness: effectiveness,
         classWeights: HYPERPARAMETERS.classWeights,
         dateRange: {
           start: moment(klines[0].openTime).format('YYYY-MM-DD HH:mm:ss'),
