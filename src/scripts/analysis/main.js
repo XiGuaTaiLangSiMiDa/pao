@@ -4,6 +4,7 @@ import { ANALYSIS_CONFIG } from './config.js';
 import { detectReversalPoints } from './detector.js';
 import { analyzeReversals, calculateWeights } from './analyzer.js';
 import { CacheStorage } from '../../utils/cache/storage.js';
+import { klineCache } from '../../utils/cache/cache.js';
 
 /**
  * Ensure output directory exists
@@ -27,6 +28,26 @@ function saveResults(results) {
 }
 
 /**
+ * Calculate effectiveness for a range
+ */
+function calculateEffectiveness(stats) {
+    return stats.total > 0 ? (stats.effective / stats.total * 100).toFixed(2) : '0.00';
+}
+
+/**
+ * Print indicator range analysis
+ */
+function printIndicatorAnalysis(name, ranges, baseEffectiveness) {
+    console.log(`    ${name}:`);
+    Object.entries(ranges).sort((a, b) => Number(a[0]) - Number(b[0])).forEach(([range, stats]) => {
+        const effectiveness = calculateEffectiveness(stats);
+        const weight = (stats.effective / stats.total) / baseEffectiveness;
+        const weightStr = weight ? weight.toFixed(2) : '0.00';
+        console.log(`      ${range.padStart(3)}: ${effectiveness}% effective (${stats.effective}/${stats.total}) [weight: ${weightStr}]`);
+    });
+}
+
+/**
  * Print analysis summary
  */
 function printSummary(results) {
@@ -34,6 +55,52 @@ function printSummary(results) {
     console.log(`Total reversals analyzed: ${results.metadata.reversalPoints}`);
     console.log(`Upward reversals: ${results.metadata.upwardReversals} (${(results.metadata.upwardEffectiveness * 100).toFixed(2)}% effective)`);
     console.log(`Downward reversals: ${results.metadata.downwardReversals} (${(results.metadata.downwardEffectiveness * 100).toFixed(2)}% effective)`);
+    
+    ['upward', 'downward'].forEach(type => {
+        const analysis = results.analysis[type];
+        const baseEffectiveness = analysis.effective / analysis.total;
+        
+        console.log(`\n${type.toUpperCase()} REVERSAL ANALYSIS:`);
+        
+        // Trend Indicators
+        console.log('\n  Trend Indicators:');
+        printIndicatorAnalysis('ADX', analysis.indicators.trend.adx, baseEffectiveness);
+        printIndicatorAnalysis('MACD', analysis.indicators.trend.macd, baseEffectiveness);
+        printIndicatorAnalysis('StochRSI', analysis.indicators.trend.stochRSI, baseEffectiveness);
+        
+        // Momentum Indicators
+        console.log('\n  Momentum Indicators:');
+        printIndicatorAnalysis('Momentum', analysis.indicators.momentum.momentum, baseEffectiveness);
+        printIndicatorAnalysis('ROC', analysis.indicators.momentum.roc, baseEffectiveness);
+        printIndicatorAnalysis('OBV', analysis.indicators.momentum.obv, baseEffectiveness);
+        
+        // Volatility Indicators
+        console.log('\n  Volatility Indicators:');
+        printIndicatorAnalysis('ATR', analysis.indicators.volatility.atr, baseEffectiveness);
+        printIndicatorAnalysis('Bollinger Bands', analysis.indicators.volatility.bBands, baseEffectiveness);
+        
+        // Volume Indicators
+        console.log('\n  Volume Indicators:');
+        printIndicatorAnalysis('CMF', analysis.indicators.volume.cmf, baseEffectiveness);
+        printIndicatorAnalysis('OBV', analysis.indicators.volume.obv, baseEffectiveness);
+    });
+    
+    // Print most effective ranges for each indicator
+    console.log('\nMOST EFFECTIVE RANGES:');
+    ['upward', 'downward'].forEach(type => {
+        console.log(`\n${type.toUpperCase()} REVERSALS:`);
+        const weights = results.weights[type];
+        
+        Object.entries(weights).forEach(([category, indicators]) => {
+            console.log(`\n  ${category.toUpperCase()}:`);
+            Object.entries(indicators).forEach(([indicator, ranges]) => {
+                const bestRange = Object.entries(ranges)
+                    .reduce((best, [range, weight]) => 
+                        weight > (best.weight || 0) ? {range, weight} : best, {});
+                console.log(`    ${indicator}: Best at ${bestRange.range} (weight: ${bestRange.weight.toFixed(2)})`);
+            });
+        });
+    });
 }
 
 /**
@@ -43,7 +110,8 @@ async function main() {
     try {
         // Load cached data
         const storage = new CacheStorage();
-        const klines = storage.getKlines('SOLUSDT');
+        //const klines = storage.getKlines('SOLUSDT');
+        const klines = await klineCache.update("SOLUSDT");
         
         if (!klines || klines.length === 0) {
             throw new Error('No cached data found');
@@ -92,4 +160,5 @@ async function main() {
     }
 }
 
+// Run analysis
 main();

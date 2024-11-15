@@ -418,5 +418,68 @@
       "totalPredictions": 194
     },
     "timestamp": "2024-11-15T07:05:08.242Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        128,
+        64
+      ],
+      "dropoutRate": 0.3,
+      "l2Regularization": 0.0001
+    },
+    "score": 0.05153442093861021,
+    "evaluation": {
+      "mse": 0.027128017136128394,
+      "mae": 0.13561071361386284,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T07:10:33.212Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        128,
+        64
+      ],
+      "dropoutRate": 0.3,
+      "l2Regularization": 0.0002
+    },
+    "score": 0.053591089948102605,
+    "evaluation": {
+      "mse": 0.030395803389545218,
+      "mae": 0.13810922864094838,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T07:17:27.916Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        128,
+        64
+      ],
+      "dropoutRate": 0.4,
+      "l2Regularization": 0.00005
+    },
+    "score": 0.05229841706769753,
+    "evaluation": {
+      "mse": 0.0276794354108364,
+      "mae": 0.1374221430112099,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T07:24:46.299Z"
   }
 ]
