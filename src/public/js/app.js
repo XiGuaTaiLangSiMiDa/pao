@@ -182,11 +182,13 @@ class PredictionUpdater {
             }
         }
 
-        // Update technical analysis summary directly from API signals
+        // Update technical analysis summary with proper div wrapping
         if (metadata.analysis && metadata.analysis.signals) {
             const summaryEl = document.getElementById('analysis-summary');
             if (summaryEl) {
-                summaryEl.innerHTML = metadata.analysis.signals.join('<br>');
+                summaryEl.innerHTML = metadata.analysis.signals
+                    .map(signal => `<div>${signal}</div>`)
+                    .join('');
             }
         }
 
