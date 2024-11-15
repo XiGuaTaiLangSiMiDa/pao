@@ -292,5 +292,89 @@
       "totalPredictions": 194
     },
     "timestamp": "2024-11-15T06:33:44.853Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        96,
+        48
+      ],
+      "dropoutRate": 0.4,
+      "l2Regularization": 0.0001
+    },
+    "score": 0.054469902221651566,
+    "evaluation": {
+      "mse": 0.029917841099453387,
+      "mae": 0.14167588593956737,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T06:39:35.895Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        96,
+        48
+      ],
+      "dropoutRate": 0.4,
+      "l2Regularization": 0.0002
+    },
+    "score": 0.05270373847265536,
+    "evaluation": {
+      "mse": 0.026969411220455538,
+      "mae": 0.13971991328157715,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T06:43:16.488Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        96,
+        48
+      ],
+      "dropoutRate": 0.5,
+      "l2Regularization": 0.00005
+    },
+    "score": 0.05357720932533002,
+    "evaluation": {
+      "mse": 0.028438223309458183,
+      "mae": 0.1406730666718225,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T06:46:00.388Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        96,
+        48
+      ],
+      "dropoutRate": 0.5,
+      "l2Regularization": 0.0001
+    },
+    "score": 0.052773645466988345,
+    "evaluation": {
+      "mse": 0.027755872141396538,
+      "mae": 0.13890432203476577,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T06:50:51.126Z"
   }
 ]
