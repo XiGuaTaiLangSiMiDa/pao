@@ -48,7 +48,6 @@ async function calculateCurrentIndicators(klines) {
 
 /**
  * Calculate similarity score between current conditions and pattern
- * Returns score between 0-1, where 1 is exact match
  */
 function calculatePatternSimilarity(current, pattern) {
     const scores = {
@@ -63,17 +62,16 @@ function calculatePatternSimilarity(current, pattern) {
         obv: (current.obv > 0) === (pattern.obv > 0) ? 1 : 0
     };
 
-    // Calculate weighted average
     const weights = {
-        adx: 1.5,    // Strong trend indicator
-        macd: 1.5,   // Important momentum
-        stochRSI: 1.2, // Overbought/oversold
+        adx: 1.5,
+        macd: 1.5,
+        stochRSI: 1.2,
         momentum: 1.0,
         roc: 1.0,
         atr: 1.0,
-        bbandsB: 1.2, // Price position
-        cmf: 1.3,    // Volume confirmation
-        obv: 1.3     // Volume confirmation
+        bbandsB: 1.2,
+        cmf: 1.3,
+        obv: 1.3
     };
 
     let totalWeight = 0;
@@ -91,7 +89,7 @@ function calculatePatternSimilarity(current, pattern) {
 /**
  * Analyze current market conditions
  */
-async function analyzeTrend() {
+export async function analyzeTrend() {
     try {
         // Load patterns
         const fs = await import('fs');
@@ -141,7 +139,7 @@ async function analyzeTrend() {
         const downwardProbability = downwardSimilarity * patterns.combinations.downward[0].effectiveness;
 
         // Prepare analysis results
-        const results = {
+        return {
             timestamp: new Date().toISOString(),
             currentPrice: klines[klines.length - 1].close,
             indicators: currentIndicators,
@@ -159,37 +157,33 @@ async function analyzeTrend() {
             }
         };
 
-        // Print analysis
-        console.log('\nCurrent Market Analysis:');
-        console.log('=======================');
-        console.log(`Current Price: ${results.currentPrice}`);
-        console.log('\nIndicator Values:');
-        console.log('----------------');
-        Object.entries(currentIndicators).forEach(([indicator, value]) => {
-            console.log(`${indicator.toUpperCase()}: ${value.toFixed(4)}`);
-        });
-
-        console.log('\nReversal Probabilities:');
-        console.log('----------------------');
-        console.log(`Upward Reversal: ${(upwardProbability * 100).toFixed(2)}%`);
-        console.log(` - Pattern Similarity: ${(upwardSimilarity * 100).toFixed(2)}%`);
-        console.log(` - Base Pattern Accuracy: ${(patterns.combinations.upward[0].effectiveness * 100).toFixed(2)}%`);
-        
-        console.log(`\nDownward Reversal: ${(downwardProbability * 100).toFixed(2)}%`);
-        console.log(` - Pattern Similarity: ${(downwardSimilarity * 100).toFixed(2)}%`);
-        console.log(` - Base Pattern Accuracy: ${(patterns.combinations.downward[0].effectiveness * 100).toFixed(2)}%`);
-
-        // Save results
-        fs.writeFileSync(
-            'models/current_analysis.json',
-            JSON.stringify(results, null, 2)
-        );
-
     } catch (error) {
         console.error('Error during analysis:', error);
-        process.exit(1);
+        throw error;
     }
 }
 
-// Run analysis
-analyzeTrend();
+// Only run standalone analysis if script is run directly
+if (process.argv[1].endsWith('trendAnalyzer.js')) {
+    analyzeTrend().then(results => {
+        console.log('\nCurrent Market Analysis:');
+        console.log('=======================');
+        console.log(`Current Price: ${results.currentPrice}`);
+        
+        console.log('\nIndicator Values:');
+        console.log('----------------');
+        Object.entries(results.indicators).forEach(([indicator, value]) => {
+            console.log(`${indicator.toUpperCase()}: ${value.toFixed(4)}`);
+        });
+        
+        console.log('\nReversal Probabilities:');
+        console.log('----------------------');
+        console.log(`Upward Reversal: ${(results.analysis.upwardReversal.probability * 100).toFixed(2)}%`);
+        console.log(` - Pattern Similarity: ${(results.analysis.upwardReversal.similarity * 100).toFixed(2)}%`);
+        console.log(` - Base Pattern Accuracy: ${(results.analysis.upwardReversal.baseAccuracy * 100).toFixed(2)}%`);
+        
+        console.log(`\nDownward Reversal: ${(results.analysis.downwardReversal.probability * 100).toFixed(2)}%`);
+        console.log(` - Pattern Similarity: ${(results.analysis.downwardReversal.similarity * 100).toFixed(2)}%`);
+        console.log(` - Base Pattern Accuracy: ${(results.analysis.downwardReversal.baseAccuracy * 100).toFixed(2)}%`);
+    });
+}

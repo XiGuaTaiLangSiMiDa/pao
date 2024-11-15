@@ -2,6 +2,8 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { makePrediction } from './predict.js';
+import { analyzeTrend } from './scripts/analysis/trendAnalyzer.js';
+import { klineCache } from './utils/cache/cache.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,16 +17,36 @@ app.use(express.json());
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Trend analysis endpoint
+app.get('/trend', async (req, res) => {
+    try {
+        const analysis = await analyzeTrend();
+        res.json(analysis);
+    } catch (error) {
+        console.error('Error getting trend analysis:', error);
+        res.status(500).json({ 
+            error: 'Failed to get trend analysis',
+            message: error.message
+        });
+    }
+});
+
 // Prediction endpoint
 app.post('/predict', async (req, res) => {
     try {
-        // Validate request body
-        const { klines } = req.body;
-        if (!klines || !Array.isArray(klines) || klines.length === 0) {
-            throw new Error('Invalid request: klines data is required');
+        let klines;
+        
+        // If klines not provided in request, fetch them
+        if (!req.body.klines || req.body.klines.length === 0) {
+            klines = await klineCache.update("SOLUSDT");
+            if (!klines || klines.length === 0) {
+                throw new Error('Failed to fetch klines data');
+            }
+        } else {
+            klines = req.body.klines;
         }
 
-        // Make prediction using provided klines
+        // Make prediction using provided or fetched klines
         const prediction = await makePrediction(klines);
         
         // Validate prediction data
@@ -59,7 +81,6 @@ app.post('/predict', async (req, res) => {
                     macd: metadata.indicators.macd || 0,
                     roc: metadata.indicators.roc || 0,
                     bBands: metadata.indicators.bBands || null,
-                    // Add new indicators
                     adx: metadata.indicators.adx || {
                         adx: 25,
                         plusDI: 20,
@@ -78,7 +99,6 @@ app.post('/predict', async (req, res) => {
             }
         };
 
-        // Log the response for debugging
         console.log('Sending prediction response:', JSON.stringify(response, null, 2));
 
         res.json(response);

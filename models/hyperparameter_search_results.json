@@ -250,5 +250,131 @@
       "totalPredictions": 194
     },
     "timestamp": "2024-11-15T08:40:54.420Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        96,
+        48
+      ],
+      "dropoutRate": 0.4,
+      "l2Regularization": 0.00005
+    },
+    "score": 0.052348906315969515,
+    "evaluation": {
+      "mse": 0.02687312704259146,
+      "mae": 0.13866551832977644,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T08:45:26.978Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        96,
+        48
+      ],
+      "dropoutRate": 0.4,
+      "l2Regularization": 0.0001
+    },
+    "score": 0.051382917052923444,
+    "evaluation": {
+      "mse": 0.026415496259239644,
+      "mae": 0.1360557284974253,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T08:48:16.207Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        96,
+        48
+      ],
+      "dropoutRate": 0.4,
+      "l2Regularization": 0.0002
+    },
+    "score": 0.05216943150737826,
+    "evaluation": {
+      "mse": 0.027140559872147033,
+      "mae": 0.1377106918617315,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T08:51:25.346Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        96,
+        48
+      ],
+      "dropoutRate": 0.5,
+      "l2Regularization": 0.00005
+    },
+    "score": 0.05208205797076436,
+    "evaluation": {
+      "mse": 0.02752634372981311,
+      "mae": 0.13690506826279705,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T08:54:22.074Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        96,
+        48
+      ],
+      "dropoutRate": 0.5,
+      "l2Regularization": 0.0001
+    },
+    "score": 0.05465191730093619,
+    "evaluation": {
+      "mse": 0.02983183195980171,
+      "mae": 0.142397281723385,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T09:04:55.369Z"
+  },
+  {
+    "params": {
+      "batchSize": 32,
+      "learningRate": 0.0005,
+      "lstmUnits": [
+        96,
+        48
+      ],
+      "dropoutRate": 0.5,
+      "l2Regularization": 0.0002
+    },
+    "score": 0.051450948948529376,
+    "evaluation": {
+      "mse": 0.026705227061148574,
+      "mae": 0.13589619374689982,
+      "directionalAccuracy": 100,
+      "validPredictions": 194,
+      "totalPredictions": 194
+    },
+    "timestamp": "2024-11-15T09:09:42.498Z"
   }
 ]
