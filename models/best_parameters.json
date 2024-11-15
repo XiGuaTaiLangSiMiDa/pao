@@ -3,24 +3,23 @@
     "batchSize": 32,
     "learningRate": 0.001,
     "lstmUnits": [
-      128,
-      64
+      64,
+      32
     ],
     "dropoutRate": 0.2,
     "l2Regularization": 0.00001
   },
-  "score": 0.18669918763321053,
+  "score": 0.0312908548094121,
   "hyperparameters": {
     "lookbackWindow": 20,
-    "featureSize": 16,
+    "featureSize": 19,
     "epochs": 50,
     "validationSplit": 0.2,
     "patience": 15,
     "searchSpace": {
       "batchSize": [
         32,
-        64,
-        128
+        64
       ],
       "learningRate": [
         0.001,
@@ -42,16 +41,20 @@
         ]
       ],
       "dropoutRate": [
-        0.1,
-        0.15,
-        0.2
+        0.2,
+        0.3,
+        0.4
       ],
       "l2Regularization": [
         0.00001,
         0.00005,
         0.0001
       ]
+    },
+    "classWeights": {
+      "positive": 1,
+      "negative": 1.105603448275862
     }
   },
-  "timestamp": "2024-11-13T18:02:25.754Z"
+  "timestamp": "2024-11-15T03:17:32.205Z"
 }

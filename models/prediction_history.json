@@ -1,32 +1,87 @@
 [
   {
-    "timestamp": 1731513411566,
-    "predictedChange": 0.3087918758392334,
-    "predictedPrice": 216.42624935131073,
-    "confidence": 74.5015303884148,
+    "timestamp": 1731640758294,
+    "predictedChange": 0.4265008270740509,
+    "predictedPrice": 299.37972857803106,
+    "direction": "UP",
+    "confidence": 85.55666541994096,
+    "modelInfo": {
+      "trainedAt": "2024-11-15T03:17:32.205Z",
+      "hyperparameters": {
+        "lookbackWindow": 20,
+        "featureSize": 19,
+        "epochs": 50,
+        "validationSplit": 0.2,
+        "patience": 15,
+        "searchSpace": {
+          "batchSize": [
+            32,
+            64
+          ],
+          "learningRate": [
+            0.001,
+            0.0005,
+            0.0001
+          ],
+          "lstmUnits": [
+            [
+              64,
+              32
+            ],
+            [
+              96,
+              48
+            ],
+            [
+              128,
+              64
+            ]
+          ],
+          "dropoutRate": [
+            0.2,
+            0.3,
+            0.4
+          ],
+          "l2Regularization": [
+            0.00001,
+            0.00005,
+            0.0001
+          ]
+        },
+        "classWeights": {
+          "positive": 1,
+          "negative": 1.105603448275862
+        }
+      }
+    },
     "metadata": {
       "price": {
-        "open": 214.81,
-        "high": 216,
-        "low": 214.6,
-        "close": 215.76
+        "open": 209.68,
+        "high": 209.99,
+        "low": 209.64,
+        "close": 209.87
       },
       "indicators": {
-        "rsi": 65.0933986165482,
-        "momentum": 3.6261466788338526,
-        "macd": 0.4954564162364701,
-        "roc": 4.1664655047554655,
+        "rsi": 44.648138878885284,
+        "stochRSI": {
+          "k": 67.13756249128933,
+          "d": 71.75089537041941
+        },
+        "obv": -53.62913398953031,
+        "macd": 0.12062767541110209,
+        "momentum": 0.03336510962821393,
+        "roc": 0.14315026005631118,
         "bBands": {
-          "bandwidth": 0.06919501889679054,
-          "percentB": 82.55688400054406,
-          "deviation": 1.3022753600217618
+          "bandwidth": 0.021223085511053112,
+          "percentB": 43.21826266692743,
+          "deviation": -0.2712694933229028
         }
       },
       "analysis": {
         "trend": "uptrend",
-        "strength": "strong",
-        "volatility": 0.006517387458684445,
-        "riskLevel": 0.15260695498347376
+        "strength": "weak",
+        "volatility": 0.00166921022510503,
+        "riskLevel": 0.0006676840900420119
       }
     }
   }

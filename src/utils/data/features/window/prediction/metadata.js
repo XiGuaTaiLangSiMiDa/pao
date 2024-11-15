@@ -22,6 +22,8 @@ function formatIndicators(indicators) {
     if (!indicators) {
         return {
             rsi: 50,
+            stochRSI: { k: 50, d: 50 },
+            obv: 0,
             momentum: 0,
             macd: 0,
             roc: 0,
@@ -31,6 +33,11 @@ function formatIndicators(indicators) {
 
     return {
         rsi: clipValue(indicators.rsi, 0, 100),
+        stochRSI: {
+            k: clipValue(indicators.stochRSI?.k || 50, 0, 100),
+            d: clipValue(indicators.stochRSI?.d || 50, 0, 100)
+        },
+        obv: indicators.obv || 0,
         momentum: clipValue(indicators.momentum, -100, 100),
         macd: clipValue(indicators.macd, -100, 100),
         roc: clipValue(indicators.roc, -100, 100),
@@ -78,8 +85,12 @@ function analyzeTrend(indicators) {
         return 'neutral';
     }
 
-    if (indicators.rsi > 70) return 'overbought';
-    if (indicators.rsi < 30) return 'oversold';
+    // Use both RSI and Stochastic RSI for trend analysis
+    const isOverbought = indicators.rsi > 70 || (indicators.stochRSI?.k > 80 && indicators.stochRSI?.d > 80);
+    const isOversold = indicators.rsi < 30 || (indicators.stochRSI?.k < 20 && indicators.stochRSI?.d < 20);
+
+    if (isOverbought) return 'overbought';
+    if (isOversold) return 'oversold';
     if (indicators.macd > 0 && indicators.roc > 0) return 'uptrend';
     if (indicators.macd < 0 && indicators.roc < 0) return 'downtrend';
     return 'neutral';
@@ -107,11 +118,14 @@ function calculateRiskLevel(volatility, indicators) {
     riskScore += volatility * 40;
     
     // RSI extremes
-    if (indicators.rsi > 75 || indicators.rsi < 25) riskScore += 30;
-    else if (indicators.rsi > 65 || indicators.rsi < 35) riskScore += 15;
+    if (indicators.rsi > 75 || indicators.rsi < 25) riskScore += 20;
+    else if (indicators.rsi > 65 || indicators.rsi < 35) riskScore += 10;
+    
+    // Stochastic RSI extremes
+    if (indicators.stochRSI?.k > 80 || indicators.stochRSI?.k < 20) riskScore += 10;
     
     // MACD volatility
-    if (Math.abs(indicators.macd) > 1) riskScore += 30;
+    if (Math.abs(indicators.macd) > 1) riskScore += 20;
     
     return clipValue(riskScore / 100, 0, 1);
 }

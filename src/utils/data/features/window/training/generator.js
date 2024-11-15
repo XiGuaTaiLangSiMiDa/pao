@@ -10,8 +10,8 @@ export function generateTrainingData(klines, lookback = WindowConfig.DEFAULT_LOO
     validateKlineData(klines, lookback);
 
     // Calculate indicators once for all windows
-    const { closes } = extractPrices(klines);
-    const indicators = calculateIndicators(closes);
+    const { closes, volumes } = extractPrices(klines);
+    const indicators = calculateIndicators(closes, volumes);
     
     // Generate feature windows
     const features = generateFeatureWindows(klines, indicators, lookback);

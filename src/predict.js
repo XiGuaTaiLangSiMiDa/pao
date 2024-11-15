@@ -5,13 +5,43 @@ import { WindowConfig } from './utils/data/features/window/base/types.js';
 import fs from 'fs';
 
 const PREDICTION_HISTORY_FILE = './models/prediction_history.json';
+const MODEL_PATH = './models/best_model/model.json';
+const PARAMETERS_PATH = './models/best_parameters.json';
+
+async function validateModel() {
+  // Check if model files exist
+  if (!fs.existsSync(MODEL_PATH)) {
+    throw new Error('Model file not found. Please train the model first.');
+  }
+  
+  if (!fs.existsSync(PARAMETERS_PATH)) {
+    throw new Error('Model parameters file not found. Please train the model first.');
+  }
+
+  // Load and validate parameters
+  const parameters = JSON.parse(fs.readFileSync(PARAMETERS_PATH, 'utf8'));
+  
+  if (!parameters.timestamp || !parameters.hyperparameters) {
+    throw new Error('Invalid model parameters file structure');
+  }
+
+  // Log model information
+  console.log('Using model trained at:', parameters.timestamp);
+  console.log('Model hyperparameters:', JSON.stringify(parameters.hyperparameters, null, 2));
+  
+  return parameters;
+}
 
 async function loadModel() {
   try {
+    console.log('Validating model...');
+    const parameters = await validateModel();
+
     console.log('Loading best model...');
     const model = await tf.loadLayersModel('file://./models/best_model/model.json');
     console.log('Model loaded successfully');
-    return model;
+    
+    return { model, parameters };
   } catch (error) {
     console.error('Error loading model:', error);
     throw error;
@@ -20,7 +50,7 @@ async function loadModel() {
 
 export async function makePrediction() {
   try {
-    const model = await loadModel();
+    const { model, parameters } = await loadModel();
 
     // Fetch data and generate features
     console.log('Fetching latest market data...');
@@ -37,16 +67,28 @@ export async function makePrediction() {
       throw new Error('Invalid metadata structure from prediction data');
     }
 
+    // Log raw indicators for debugging
+    console.log('\nRaw Indicator Values:');
+    console.log(JSON.stringify({
+      rsi: metadata.indicators.rsi,
+      stochRSI: metadata.indicators.stochRSI,
+      obv: metadata.indicators.obv,
+      macd: metadata.indicators.macd,
+      momentum: metadata.indicators.momentum,
+      roc: metadata.indicators.roc,
+      bBands: metadata.indicators.bBands
+    }, null, 2));
+
     const latestFeature = features[0];
     const currentPrice = metadata.price.close;
     
     // Preprocess features using the same pipeline as training
-    console.log('Preprocessing features...');
+    console.log('\nPreprocessing features...');
     const preprocessedFeatures = await preprocessFeatures(features);
     console.log('Preprocessed feature shape:', preprocessedFeatures.shape);
     
     // Make prediction
-    console.log('Making prediction...');
+    console.log('\nMaking prediction...');
     const prediction = model.predict(preprocessedFeatures);
     const predictedChange = await prediction.data();
     console.log('Prediction completed');
@@ -63,14 +105,22 @@ export async function makePrediction() {
     prediction.dispose();
 
     // Calculate predicted price
-    const predictedPrice = currentPrice * (1 + predictedChange[0]/100);
+    const predictedPrice = currentPrice * (1 + predictedChange[0]);
+    
+    // Determine prediction direction
+    const direction = predictedChange[0] > 0 ? 'UP' : predictedChange[0] < 0 ? 'DOWN' : 'NEUTRAL';
 
     // Create prediction record with complete metadata
     const predictionRecord = {
       timestamp: Date.now(),
       predictedChange: predictedChange[0],
       predictedPrice,
+      direction,
       confidence,
+      modelInfo: {
+        trainedAt: parameters.timestamp,
+        hyperparameters: parameters.hyperparameters
+      },
       metadata: {
         price: {
           open: metadata.price.open,
@@ -80,8 +130,10 @@ export async function makePrediction() {
         },
         indicators: {
           rsi: metadata.indicators.rsi,
-          momentum: metadata.indicators.momentum,
+          stochRSI: metadata.indicators.stochRSI,
+          obv: metadata.indicators.obv,
           macd: metadata.indicators.macd,
+          momentum: metadata.indicators.momentum,
           roc: metadata.indicators.roc,
           bBands: metadata.indicators.bBands
         },
@@ -114,15 +166,17 @@ export async function makePrediction() {
 }
 
 function calculateConfidence(predictedChange, rsi, volatility) {
+  // Adjust confidence calculation to account for directional predictions
+  const changeMagnitude = Math.abs(predictedChange);
   return Math.min(100, Math.max(0, (
     // Prediction magnitude (30%)
-    (Math.min(Math.abs(predictedChange) / 2, 1) * 30) +
-    // RSI not at extremes (30%)
-    ((rsi > 30 && rsi < 70) ? 30 : 10) +
+    (Math.min(changeMagnitude, 0.5) * 60) +
+    // RSI alignment with prediction (30%)
+    ((predictedChange > 0 && rsi < 70) || (predictedChange < 0 && rsi > 30) ? 30 : 10) +
     // Low volatility (20%)
     (Math.max(0, 1 - volatility) * 20) +
-    // Base confidence (20%)
-    20
+    // Base confidence (10%)
+    10
   )));
 }
 
