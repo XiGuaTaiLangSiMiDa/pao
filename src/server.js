@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { makePrediction } from './utils/webPredict.js';
+import { makePrediction } from './predict.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -52,6 +52,8 @@ app.post('/predict', async (req, res) => {
                     close: metadata.price.close || 0
                 },
                 indicators: {
+                    stochRSI: metadata.indicators.stochRSI,
+                    obv: metadata.indicators.obv,
                     rsi: metadata.indicators.rsi || 50,
                     momentum: metadata.indicators.momentum || 0,
                     macd: metadata.indicators.macd || 0,

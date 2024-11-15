@@ -3,13 +3,13 @@
     "batchSize": 32,
     "learningRate": 0.001,
     "lstmUnits": [
-      64,
-      32
+      96,
+      48
     ],
-    "dropoutRate": 0.2,
-    "l2Regularization": 0.00001
+    "dropoutRate": 0.3,
+    "l2Regularization": 0.0001
   },
-  "score": 0.0312908548094121,
+  "score": 0.031040451359756253,
   "hyperparameters": {
     "lookbackWindow": 20,
     "featureSize": 19,
@@ -53,8 +53,8 @@
     },
     "classWeights": {
       "positive": 1,
-      "negative": 1.105603448275862
+      "negative": 1.1010752688172043
     }
   },
-  "timestamp": "2024-11-15T03:17:32.205Z"
+  "timestamp": "2024-11-15T04:32:39.242Z"
 }

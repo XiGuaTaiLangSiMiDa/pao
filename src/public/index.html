@@ -28,25 +28,53 @@
                     <div class="prediction-value" id="predicted-price">-</div>
                 </div>
                 <div class="prediction-item">
-                    <h3>Confidence</h3>
+                    <h3>Model Confidence</h3>
                     <div class="prediction-value" id="confidence">-</div>
+                    <div class="tooltip">基于模型预测的置信度分数</div>
                 </div>
-                <div class="prediction-item">
+            </div>
+        </div>
+
+        <div class="technical-panel">
+            <h2>Technical Indicators</h2>
+            <div class="indicators-grid">
+                <div class="indicator-item">
                     <h3>RSI</h3>
-                    <div class="prediction-value" id="rsi">-</div>
+                    <div class="indicator-value" id="rsi">-</div>
+                    <div class="tooltip">相对强弱指标: >70超买, <30超卖</div>
                 </div>
-                <div class="prediction-item">
+                <div class="indicator-item">
+                    <h3>StochRSI K</h3>
+                    <div class="indicator-value" id="stoch-rsi-k">-</div>
+                    <div class="tooltip">随机RSI快线: >80超买, <20超卖</div>
+                </div>
+                <div class="indicator-item">
+                    <h3>StochRSI D</h3>
+                    <div class="indicator-value" id="stoch-rsi-d">-</div>
+                    <div class="tooltip">随机RSI慢线: 与K线交叉产生信号</div>
+                </div>
+                <div class="indicator-item">
+                    <h3>OBV</h3>
+                    <div class="indicator-value" id="obv">-</div>
+                    <div class="tooltip">能量潮指标: 显示成交量趋势</div>
+                </div>
+                <div class="indicator-item">
                     <h3>Signal</h3>
                     <div class="signal neutral" id="signal">Neutral</div>
+                    <div class="tooltip">综合技术指标的交易信号</div>
                 </div>
-                <div class="prediction-item">
+                <div class="indicator-item">
                     <h3>Trend</h3>
-                    <div class="prediction-value" id="trend">-</div>
+                    <div class="indicator-value" id="trend">-</div>
+                    <div class="tooltip">当前市场趋势方向</div>
                 </div>
-                <div class="prediction-item">
-                    <h3>Strength</h3>
-                    <div class="prediction-value" id="strength">-</div>
-                </div>
+            </div>
+        </div>
+
+        <div class="analysis-panel">
+            <h2>Technical Analysis Summary</h2>
+            <div class="analysis-content" id="analysis-summary">
+                <!-- Analysis summary will be inserted here -->
             </div>
         </div>
 
@@ -67,6 +95,10 @@
                     <h3>Lowest Price</h3>
                     <div class="prediction-value" id="low-price">-</div>
                 </div>
+                <div class="prediction-item">
+                    <h3>Volume Trend</h3>
+                    <div class="prediction-value" id="volume-trend">-</div>
+                </div>
             </div>
         </div>
 
@@ -82,6 +114,7 @@
                             <th>Predicted Price</th>
                             <th>Confidence</th>
                             <th>Signal</th>
+                            <th>Accuracy</th>
                         </tr>
                     </thead>
                     <tbody id="prediction-history-body">
