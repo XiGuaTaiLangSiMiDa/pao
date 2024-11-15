@@ -9,7 +9,8 @@
     "train": "node src/train.js",
     "predict": "node src/predict.js",
     "cache:init": "node src/scripts/initializeCache.js",
-    "cache:update": "node src/scripts/updateCache.js"
+    "cache:update": "node src/scripts/updateCache.js",
+    "analyze:timeframes": "node src/scripts/timeframe_analysis/main.js"
   },
   "dependencies": {
     "@tensorflow/tfjs-node": "^4.17.0",

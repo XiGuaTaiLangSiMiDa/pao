@@ -1,0 +1,159 @@
+Timeframe Analysis Summary
+========================
+
+Reversal Statistics by Timeframe:
+--------------------------------
+
+15m:
+  Total Reversals: 576
+  Bullish: 505 (87.7%)
+  Bearish: 71 (12.3%)
+  Avg Stock RSI: 21.18
+  Avg OBV Divergence: 1.16
+  Patterns:
+    hammer: 223
+    shooting_star: 44
+    double_top: 1
+
+30m:
+  Total Reversals: 629
+  Bullish: 519 (82.5%)
+  Bearish: 110 (17.5%)
+  Avg Stock RSI: 25.54
+  Avg OBV Divergence: 0.92
+  Patterns:
+    hammer: 235
+    shooting_star: 55
+
+1h:
+  Total Reversals: 235
+  Bullish: 202 (86.0%)
+  Bearish: 33 (14.0%)
+  Avg Stock RSI: 23.80
+  Avg OBV Divergence: 1.92
+  Patterns:
+    shooting_star: 21
+    hammer: 90
+    double_top: 1
+
+2h:
+  Total Reversals: 140
+  Bullish: 122 (87.1%)
+  Bearish: 18 (12.9%)
+  Avg Stock RSI: 25.30
+  Avg OBV Divergence: 0.72
+  Patterns:
+    hammer: 48
+    shooting_star: 3
+
+4h:
+  Total Reversals: 77
+  Bullish: 68 (88.3%)
+  Bearish: 9 (11.7%)
+  Avg Stock RSI: 21.85
+  Avg OBV Divergence: 1.72
+  Patterns:
+    hammer: 27
+    shooting_star: 7
+
+8h:
+  Total Reversals: 30
+  Bullish: 27 (90.0%)
+  Bearish: 3 (10.0%)
+  Avg Stock RSI: 16.47
+  Avg OBV Divergence: 6.06
+  Patterns:
+    hammer: 9
+
+12h:
+  Total Reversals: 43
+  Bullish: 37 (86.0%)
+  Bearish: 6 (14.0%)
+  Avg Stock RSI: 26.67
+  Avg OBV Divergence: 0.61
+  Patterns:
+    hammer: 18
+    shooting_star: 2
+
+1d:
+  Total Reversals: 21
+  Bullish: 21 (100.0%)
+  Bearish: 0 (0.0%)
+  Avg Stock RSI: 15.36
+  Avg OBV Divergence: 0.53
+  Patterns:
+    shooting_star: 1
+    hammer: 6
+
+1w:
+  Total Reversals: 1
+  Bullish: 1 (100.0%)
+  Bearish: 0 (0.0%)
+  Avg Stock RSI: 2.91
+  Avg OBV Divergence: 0.21
+  Patterns:
+    hammer: 1
+
+1M:
+  Total Reversals: 0
+
+Warning Sequence Analysis:
+------------------------
+Total Sequences Found: 1515
+
+Most Common Warning Sequences:
+  15m:bullish: 435 occurrences
+  30m:bullish: 411 occurrences
+  1h:bullish: 120 occurrences
+  30m:bearish: 97 occurrences
+  15m:bearish: 69 occurrences
+
+Most Recent Warning Sequences:
+
+  2024-11-10 13:30:00:
+    15m: bullish (RSI: 31.71, Confidence: 39.7%)
+
+  2024-11-10 23:30:00:
+    15m: bullish (RSI: 0.00, Confidence: 57.5%)
+
+  2024-11-10 23:45:00:
+    15m: bullish (RSI: 0.00, Confidence: 69.2%)
+
+  2024-11-11 00:00:00:
+    15m: bullish (RSI: 0.00, Confidence: 41.7%)
+
+  2024-11-11 20:00:00:
+    12h: bullish (RSI: 11.89, Confidence: 44.5%)
+
+Future Trend Probabilities:
+-------------------------
+
+15m:
+  Direction: bullish
+  Probability: 30.1%
+  Confidence: 74.4%
+
+30m:
+  Direction: bullish
+  Probability: 30.3%
+  Confidence: 75.8%
+
+1h:
+  Direction: bullish
+  Probability: 30.4%
+  Confidence: 80.3%
+
+4h:
+  Direction: bearish
+  Probability: 28.0%
+  Confidence: 83.7%
+
+8h:
+  Direction: bearish
+  Probability: 10.4%
+  Confidence: 70.0%
+
+1d:
+  Direction: bullish
+  Probability: 26.5%
+  Confidence: 50.4%
