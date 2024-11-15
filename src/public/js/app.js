@@ -58,10 +58,15 @@ function updatePredictionHistory(newPrediction) {
         predictedPriceCell.textContent = prediction.predictedPrice.toFixed(2);
         row.appendChild(predictedPriceCell);
         
-        // Confidence
-        const confidenceCell = document.createElement('td');
-        confidenceCell.textContent = `${prediction.confidence}%`;
-        row.appendChild(confidenceCell);
+        // Signal
+        const signalCell = document.createElement('td');
+        signalCell.textContent = prediction.signal;
+        row.appendChild(signalCell);
+        
+        // Accuracy
+        const accuracyCell = document.createElement('td');
+        accuracyCell.textContent = `${prediction.accuracy}%`;
+        row.appendChild(accuracyCell);
         
         tbody.appendChild(row);
     });

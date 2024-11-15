@@ -66,6 +66,8 @@ app.post('/predict', async (req, res) => {
             predictedChange: prediction.predictedChange,
             predictedPrice: prediction.predictedPrice,
             confidence: prediction.confidence,
+            signal: prediction.signal || 'Low Confidence',
+            accuracy: prediction.accuracy || prediction.confidence,
             metadata: {
                 price: {
                     open: metadata.price.open || 0,
