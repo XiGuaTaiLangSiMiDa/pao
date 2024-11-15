@@ -33,7 +33,8 @@ body {
 .analysis-panel,
 .stats-panel,
 .prediction-history-panel,
-.risk-panel {
+.risk-panel,
+.risk-assessment-panel {
     background: white;
     border-radius: 8px;
     padding: 20px;
@@ -113,6 +114,62 @@ body {
 .signal.sell { background-color: #f8d7da; color: #721c24; }
 .signal.neutral { background-color: #e2e3e5; color: #383d41; }
 
+/* Risk Assessment styles */
+.risk-content {
+    padding: 15px;
+    border-radius: 6px;
+    margin-top: 15px;
+}
+
+.risk-level {
+    font-size: 1.2em;
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.risk-level.high {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.risk-level.medium {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+
+.risk-level.low {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.risk-list {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+}
+
+.risk-list li {
+    padding: 8px;
+    margin: 5px 0;
+    border-radius: 4px;
+    font-size: 0.95em;
+}
+
+.risk-list.high li {
+    background-color: rgba(248, 215, 218, 0.3);
+    border-left: 4px solid #dc3545;
+}
+
+.risk-list.medium li {
+    background-color: rgba(255, 243, 205, 0.3);
+    border-left: 4px solid #ffc107;
+}
+
 /* Tooltips */
 .tooltip {
     display: none;
@@ -132,7 +189,8 @@ body {
 
 .prediction-item:hover .tooltip,
 .trend-item:hover .tooltip,
-.indicator-item:hover .tooltip {
+.indicator-item:hover .tooltip,
+.risk-assessment-panel:hover .tooltip {
     display: block;
 }
 
