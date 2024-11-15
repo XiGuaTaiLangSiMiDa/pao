@@ -6,16 +6,16 @@
       64,
       32
     ],
-    "dropoutRate": 0.3,
+    "dropoutRate": 0.4,
     "l2Regularization": 0.00005
   },
-  "score": 0.06011376463990911,
+  "score": 0.05047033866333761,
   "hyperparameters": {
     "lookbackWindow": 30,
     "featureSize": 22,
-    "epochs": 3,
+    "epochs": 100,
     "validationSplit": 0.2,
-    "patience": 15,
+    "patience": 20,
     "searchSpace": {
       "batchSize": [
         32,
@@ -116,5 +116,5 @@
       "minTrendStrength": 0.01
     }
   },
-  "timestamp": "2024-11-15T07:52:43.738Z"
+  "timestamp": "2024-11-15T08:03:29.410Z"
 }
