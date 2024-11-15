@@ -1,31 +1,41 @@
 import * as tf from '@tensorflow/tfjs-node';
 import { HYPERPARAMETERS } from '../hyperparameters.js';
 
-// Custom Huber loss with adjusted delta
-function huberLoss(yTrue, yPred, delta = 0.3) {  // Reduced delta for finer-grained error handling
+// Custom loss function that penalizes directional errors more heavily
+function directionalLoss(yTrue, yPred) {
   const error = tf.sub(yPred, yTrue);
   const absError = tf.abs(error);
-  const quadratic = tf.minimum(absError, delta);
-  const linear = tf.sub(absError, quadratic);
-  const loss = tf.add(
-    tf.mul(0.5, tf.square(quadratic)),
-    tf.mul(delta, linear)
+  
+  // Calculate directional agreement using smooth approximation
+  const trueDirection = tf.tanh(tf.mul(yTrue, 10)); // Smooth sign function
+  const predDirection = tf.tanh(tf.mul(yPred, 10)); // Smooth sign function
+  const directionAgreement = tf.mul(trueDirection, predDirection);
+  
+  // Higher penalty for wrong direction (1 - agreement ranges from 0 to 2)
+  const directionPenalty = tf.add(
+    tf.scalar(1.0),
+    tf.sub(tf.scalar(1.0), directionAgreement)
   );
-  return tf.mean(loss);
+  
+  // Combine L1 and L2 losses with direction penalty
+  const l1Loss = tf.mul(absError, directionPenalty);
+  const l2Loss = tf.mul(tf.square(error), directionPenalty);
+  
+  return tf.mean(tf.add(l1Loss, l2Loss));
 }
 
 export function createModel(params) {
   const model = tf.sequential();
   
-  // Bidirectional LSTM layer
+  // First Bidirectional LSTM layer
   model.add(tf.layers.bidirectional({
     layer: tf.layers.lstm({
       units: params.lstmUnits[0],
       returnSequences: true,
-      recurrentRegularizer: tf.regularizers.l2({ l2: params.l2Regularization / 2 }), // Reduced L2
-      kernelRegularizer: tf.regularizers.l2({ l2: params.l2Regularization / 2 }),
-      recurrentInitializer: 'glorotUniform',
-      kernelInitializer: 'glorotUniform',
+      recurrentRegularizer: tf.regularizers.l2({ l2: params.l2Regularization }),
+      kernelRegularizer: tf.regularizers.l2({ l2: params.l2Regularization }),
+      recurrentInitializer: 'glorotNormal',
+      kernelInitializer: 'glorotNormal',
       unitForgetBias: true,
       implementation: 2,
       recurrentActivation: 'sigmoid',
@@ -36,17 +46,17 @@ export function createModel(params) {
   }));
   
   model.add(tf.layers.layerNormalization());
-  model.add(tf.layers.dropout(Math.min(params.dropoutRate, 0.3))); // Cap dropout rate
+  model.add(tf.layers.dropout(params.dropoutRate));
   
   // Second Bidirectional LSTM layer
   model.add(tf.layers.bidirectional({
     layer: tf.layers.lstm({
       units: params.lstmUnits[1],
       returnSequences: false,
-      recurrentRegularizer: tf.regularizers.l2({ l2: params.l2Regularization / 2 }),
-      kernelRegularizer: tf.regularizers.l2({ l2: params.l2Regularization / 2 }),
-      recurrentInitializer: 'glorotUniform',
-      kernelInitializer: 'glorotUniform',
+      recurrentRegularizer: tf.regularizers.l2({ l2: params.l2Regularization }),
+      kernelRegularizer: tf.regularizers.l2({ l2: params.l2Regularization }),
+      recurrentInitializer: 'glorotNormal',
+      kernelInitializer: 'glorotNormal',
       unitForgetBias: true,
       implementation: 2,
       recurrentActivation: 'sigmoid',
@@ -56,39 +66,50 @@ export function createModel(params) {
   }));
   
   model.add(tf.layers.layerNormalization());
-  model.add(tf.layers.dropout(Math.min(params.dropoutRate, 0.2))); // Lower dropout for deeper layers
+  model.add(tf.layers.dropout(params.dropoutRate));
   
-  // Attention mechanism
-  const attention = tf.layers.dense({
-    units: params.lstmUnits[1] * 2, // *2 because of bidirectional
-    activation: 'tanh',
-    kernelInitializer: 'glorotUniform'
-  });
-  
-  // Dense layers with reduced regularization
+  // Dense layers with balanced initialization
   model.add(tf.layers.dense({
-    units: 16,
+    units: 32,
     activation: 'relu',
-    kernelRegularizer: tf.regularizers.l2({ l2: params.l2Regularization / 4 }),
-    kernelInitializer: 'glorotUniform',
+    kernelRegularizer: tf.regularizers.l2({ l2: params.l2Regularization }),
+    kernelInitializer: 'heNormal',
     kernelConstraint: tf.constraints.maxNorm({ maxValue: 3 })
   }));
   
-  // Output layer
+  model.add(tf.layers.dense({
+    units: 16,
+    activation: 'relu',
+    kernelRegularizer: tf.regularizers.l2({ l2: params.l2Regularization }),
+    kernelInitializer: 'heNormal',
+    kernelConstraint: tf.constraints.maxNorm({ maxValue: 2 })
+  }));
+  
+  // Output layer with symmetric initialization
   model.add(tf.layers.dense({
     units: 1,
-    activation: 'linear',
-    kernelInitializer: 'glorotUniform',
+    activation: 'linear',  // Linear activation to allow both positive and negative predictions
+    kernelInitializer: {
+      className: 'RandomNormal',
+      config: {
+        mean: 0,
+        stddev: 0.05
+      }
+    },
+    useBias: true,
+    biasInitializer: 'zeros',  // Start with no bias to avoid directional preference
     kernelConstraint: tf.constraints.maxNorm({ maxValue: 1 })
   }));
 
+  // Configure optimizer with gradient clipping
   const optimizer = tf.train.adam(params.learningRate, 0.9, 0.999, 1e-7);
-  optimizer.clipNorm = 0.5;
-  optimizer.clipValue = 0.5;
+  optimizer.clipNorm = 1.0;  // Global norm clipping
+  optimizer.clipValue = 0.5; // Element-wise clipping
 
+  // Compile with directional loss
   model.compile({
     optimizer: optimizer,
-    loss: huberLoss,
+    loss: directionalLoss,
     metrics: ['mse', 'mae']
   });
 

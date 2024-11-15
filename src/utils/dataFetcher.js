@@ -42,16 +42,23 @@ export async function fetchPredictionData({
 }) {
     try {
         console.log('Fetching prediction data...');
-        // Fetch enough klines for the lookback window plus indicators
+        // Calculate required periods for indicators
+        const rsiPeriod = 14;
+        const stochPeriod = 14;
+        const smoothK = 3;
+        const smoothD = 3;
+        const extraPeriodsNeeded = rsiPeriod + stochPeriod + smoothK + smoothD;
+        
+        // Fetch enough klines for indicators plus lookback window
         const klines = await fetchKlines({
             symbol,
             interval,
-            limit: lookback + 5
+            limit: lookback + extraPeriodsNeeded
         });
         console.log(`Fetched ${klines.length} klines`);
 
-        if (!klines || klines.length < lookback + 1) {
-            throw new Error(`Insufficient kline data: need at least ${lookback + 1} klines, got ${klines?.length}`);
+        if (!klines || klines.length < lookback + extraPeriodsNeeded) {
+            throw new Error(`Insufficient kline data: need at least ${lookback + extraPeriodsNeeded} klines, got ${klines?.length}`);
         }
 
         console.log('Generating prediction features...');
@@ -66,7 +73,18 @@ export async function fetchPredictionData({
             throw new Error('Invalid metadata structure in prediction data');
         }
 
-        console.log('Generated prediction data:', JSON.stringify(result, null, 2));
+        // Log indicator calculation details
+        console.log('Indicator calculation details:', {
+            dataPoints: klines.length,
+            requiredPeriods: {
+                lookback,
+                rsi: rsiPeriod,
+                stochastic: stochPeriod,
+                smoothK,
+                smoothD,
+                total: lookback + extraPeriodsNeeded
+            }
+        });
 
         return {
             ...result,

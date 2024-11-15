@@ -5,7 +5,8 @@ export function extractPrices(klines) {
         closes: klines.map(k => k.close),
         opens: klines.map(k => k.open),
         highs: klines.map(k => k.high),
-        lows: klines.map(k => k.low)
+        lows: klines.map(k => k.low),
+        volumes: klines.map(k => k.volume)  // Added volumes extraction
     };
 }
 

@@ -10,8 +10,8 @@ export function generatePredictionData(klines, lookback = WindowConfig.DEFAULT_L
     validateKlineData(klines, lookback);
 
     // Calculate indicators for the window
-    const { closes } = extractPrices(klines);
-    const indicators = calculateIndicators(closes);
+    const { closes, volumes } = extractPrices(klines);
+    const indicators = calculateIndicators(closes, volumes);
     
     // Generate feature window for current k-bar
     const window = processKlineWindow(
@@ -35,6 +35,11 @@ export function generatePredictionData(klines, lookback = WindowConfig.DEFAULT_L
     // Get latest indicators
     const latestIndicators = {
         rsi: indicators.rsi[indicators.rsi.length - 1],
+        stochRSI: {
+            k: indicators.stochRSI.k[indicators.stochRSI.k.length - 1],
+            d: indicators.stochRSI.d[indicators.stochRSI.d.length - 1]
+        },
+        obv: indicators.obv[indicators.obv.length - 1],
         macd: indicators.macd.histogram[indicators.macd.histogram.length - 1],
         momentum: indicators.momentum[indicators.momentum.length - 1],
         roc: indicators.roc[indicators.roc.length - 1],

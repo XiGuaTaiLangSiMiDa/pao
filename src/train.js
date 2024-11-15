@@ -8,6 +8,30 @@ import { WindowConfig } from './utils/data/features/window/base/types.js';
 import moment from 'moment';
 import fs from 'fs';
 
+// Analyze label distribution
+function analyzeLabelDistribution(labels) {
+  const positive = labels.filter(l => l > 0).length;
+  const negative = labels.filter(l => l < 0).length;
+  const neutral = labels.filter(l => l === 0).length;
+  const total = labels.length;
+  
+  return {
+    positive: {
+      count: positive,
+      percentage: (positive / total * 100).toFixed(2)
+    },
+    negative: {
+      count: negative,
+      percentage: (negative / total * 100).toFixed(2)
+    },
+    neutral: {
+      count: neutral,
+      percentage: (neutral / total * 100).toFixed(2)
+    },
+    total
+  };
+}
+
 async function trainModel() {
   try {
     const symbol = 'SOLUSDT';
@@ -32,6 +56,24 @@ async function trainModel() {
     });
 
     console.log(`Generated ${features.length} feature windows`);
+
+    // Analyze and log label distribution
+    const distribution = analyzeLabelDistribution(labels);
+    console.log('\nLabel Distribution:');
+    console.log(`Positive changes: ${distribution.positive.count} (${distribution.positive.percentage}%)`);
+    console.log(`Negative changes: ${distribution.negative.count} (${distribution.negative.percentage}%)`);
+    console.log(`Neutral changes: ${distribution.neutral.count} (${distribution.neutral.percentage}%)`);
+
+    // Adjust class weights based on distribution if needed
+    const positiveWeight = 1.0;
+    const negativeWeight = distribution.positive.count / distribution.negative.count;
+    console.log('\nUsing class weights:', { positive: positiveWeight, negative: negativeWeight });
+
+    // Update hyperparameters with calculated weights
+    HYPERPARAMETERS.classWeights = {
+      positive: positiveWeight,
+      negative: negativeWeight
+    };
 
     // Preprocess data
     console.log('Preprocessing data...');
@@ -64,6 +106,8 @@ async function trainModel() {
         trainingSamples: splitIndex,
         testingSamples: features.length - splitIndex,
         featureShape: featuresTensor.shape,
+        labelDistribution: distribution,
+        classWeights: HYPERPARAMETERS.classWeights,
         dateRange: {
           start: moment(klines[0].openTime).format('YYYY-MM-DD HH:mm:ss'),
           end: moment(klines[klines.length - 1].openTime).format('YYYY-MM-DD HH:mm:ss')

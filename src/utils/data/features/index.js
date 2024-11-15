@@ -22,8 +22,8 @@ export {
 
 export {
     generateLabels,
-    normalizeClose,
-    denormalizeClose,
+    calculatePriceChange,
+    denormalizeChange,
     validateLabels
 } from './window/training/labels.js';
 

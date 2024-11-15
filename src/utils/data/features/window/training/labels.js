@@ -4,30 +4,34 @@ export function generateLabels(klines, startIndex) {
     const labels = [];
     
     for (let i = startIndex; i < klines.length; i++) {
-        const normalizedClose = normalizeClose(klines[i].close, klines[i].open);
-        labels.push(normalizedClose);
+        const normalizedChange = calculatePriceChange(klines[i].close, klines[i].open);
+        labels.push(normalizedChange);
     }
 
     return labels;
 }
 
-export function normalizeClose(close, referencePrice) {
+export function calculatePriceChange(close, referencePrice) {
     if (!isFinite(close) || !isFinite(referencePrice) || referencePrice === 0) {
         return 0;
     }
     
-    // Normalize close price relative to reference price
-    const normalizedValue = (close - referencePrice) / referencePrice;
-    return clipValue(normalizedValue);
+    // Calculate percentage change (-1 to +1 range)
+    // Negative values indicate price decrease
+    // Positive values indicate price increase
+    const percentageChange = (close - referencePrice) / referencePrice;
+    
+    // Clip to ensure values stay within -1 to +1 range
+    return clipValue(percentageChange);
 }
 
-export function denormalizeClose(normalizedClose, referencePrice) {
-    if (!isFinite(normalizedClose) || !isFinite(referencePrice)) {
+export function denormalizeChange(normalizedChange, referencePrice) {
+    if (!isFinite(normalizedChange) || !isFinite(referencePrice)) {
         return referencePrice;
     }
     
-    // Convert normalized close back to actual price
-    return referencePrice * (1 + normalizedClose);
+    // Convert normalized change back to actual price
+    return referencePrice * (1 + normalizedChange);
 }
 
 export function validateLabels(labels) {
