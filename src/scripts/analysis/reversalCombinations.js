@@ -201,10 +201,10 @@ function formatCombinationDetails(combination) {
 /**
  * Main analysis function
  */
-async function analyzeReversalCombinations() {
+async function analyzeReversalCombinations(symbal="SOLUSDT") {
     try {
         // Load data
-        const klines = await klineCache.update("SOLUSDT");
+        const klines = await klineCache.update(symbal);
         if (!klines || klines.length === 0) {
             throw new Error('No cached data found');
         }
@@ -233,7 +233,7 @@ async function analyzeReversalCombinations() {
         // Save results
         const fs = await import('fs');
         fs.writeFileSync(
-            'models/reversal_combinations.json',
+            `models/reversal_combinations_${symbal}.json`,
             JSON.stringify(results, null, 2)
         );
 
@@ -255,4 +255,7 @@ async function analyzeReversalCombinations() {
 }
 
 // Run analysis
-analyzeReversalCombinations();
+if (process.argv[1].endsWith('reversalCombinations.js')) {
+    const l3 = process.argv.length == 3;
+    analyzeReversalCombinations(l3 ? `${process.argv[2]}USDT` : "SOLUSDT");
+}

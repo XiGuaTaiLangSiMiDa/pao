@@ -1,0 +1,235 @@
+{
+  "metadata": {
+    "totalKlines": 35138,
+    "totalReversals": 7032,
+    "upwardReversals": 3483,
+    "downwardReversals": 3549
+  },
+  "combinations": {
+    "upward": [
+      {
+        "combination": "ADX:60|MACD:neg|StochRSI:-10|MOM:0|ROC:0|ATR:50|BBB:-20|CMF:neg|OBV:neg",
+        "effectiveness": 0.8,
+        "total": 5,
+        "effective": 4,
+        "indicators": {
+          "adx": 65.11081878835725,
+          "macd": -0.004711693950269934,
+          "stochRSI": -0.8828533253418878,
+          "momentum": -16.827783745076974,
+          "roc": -16.827783745076974,
+          "atr": 0.00996003270568908,
+          "bbandsB": -15.09325520891886,
+          "cmf": -0.06708443947190267,
+          "obv": -458709115.9999981
+        }
+      },
+      {
+        "combination": "ADX:50|MACD:neg|StochRSI:20|MOM:0|ROC:0|ATR:50|BBB:0|CMF:neg|OBV:neg",
+        "effectiveness": 0.75,
+        "total": 8,
+        "effective": 6,
+        "indicators": {
+          "adx": 51.30535878512244,
+          "macd": -0.0011014435013856389,
+          "stochRSI": 23.283671041536678,
+          "momentum": -3.1952247191011196,
+          "roc": -3.1952247191011223,
+          "atr": 0.0029471432363129277,
+          "bbandsB": 2.6028798874467682,
+          "cmf": -0.21735885347033582,
+          "obv": -91964270.89999987
+        }
+      },
+      {
+        "combination": "ADX:50|MACD:neg|StochRSI:-10|MOM:0|ROC:0|ATR:50|BBB:-10|CMF:neg|OBV:neg",
+        "effectiveness": 0.6153846153846154,
+        "total": 13,
+        "effective": 8,
+        "indicators": {
+          "adx": 52.54734728110877,
+          "macd": -0.0006285897954845339,
+          "stochRSI": -2.3689981742226753,
+          "momentum": -3.467215928595946,
+          "roc": -3.4672159285959485,
+          "atr": 0.0030019434735674456,
+          "bbandsB": -0.1185003337269002,
+          "cmf": -0.26713026458177025,
+          "obv": -37274498.59999979
+        }
+      },
+      {
+        "combination": "ADX:30|MACD:neg|StochRSI:-20|MOM:0|ROC:0|ATR:50|BBB:-10|CMF:neg|OBV:neg",
+        "effectiveness": 0.6,
+        "total": 5,
+        "effective": 3,
+        "indicators": {
+          "adx": 35.79824400360565,
+          "macd": -0.00020571801301167304,
+          "stochRSI": -10.118070413490903,
+          "momentum": -2.79767997270558,
+          "roc": -2.797679972705575,
+          "atr": 0.0030131272736812487,
+          "bbandsB": -2.093484879950329,
+          "cmf": -0.0579267853791889,
+          "obv": -62280163.79999998
+        }
+      },
+      {
+        "combination": "ADX:30|MACD:neg|StochRSI:-30|MOM:0|ROC:0|ATR:50|BBB:-30|CMF:neg|OBV:neg",
+        "effectiveness": 0.6,
+        "total": 5,
+        "effective": 3,
+        "indicators": {
+          "adx": 34.67653884970885,
+          "macd": -0.0011883021610866681,
+          "stochRSI": -29.366738861659332,
+          "momentum": -4.979811574697191,
+          "roc": -4.979811574697185,
+          "atr": 0.003893637854021207,
+          "bbandsB": -24.868477427498,
+          "cmf": -0.05477343884156812,
+          "obv": -86915134.7999999
+        }
+      },
+      {
+        "combination": "ADX:40|MACD:neg|StochRSI:-30|MOM:0|ROC:0|ATR:50|BBB:-30|CMF:neg|OBV:neg",
+        "effectiveness": 0.6,
+        "total": 5,
+        "effective": 3,
+        "indicators": {
+          "adx": 40.89478550061005,
+          "macd": -0.0009631639167177318,
+          "stochRSI": -21.506964085613518,
+          "momentum": -3.8433908045977017,
+          "roc": -3.8433908045976968,
+          "atr": 0.0028123326835526674,
+          "bbandsB": -27.031563539945573,
+          "cmf": -0.05341665297683989,
+          "obv": -169725111.79999956
+        }
+      },
+      {
+        "combination": "ADX:20|MACD:pos|StochRSI:70|MOM:50|ROC:50|ATR:50|BBB:70|CMF:pos|OBV:neg",
+        "effectiveness": 0.6,
+        "total": 5,
+        "effective": 3,
+        "indicators": {
+          "adx": 27.740827098270383,
+          "macd": 0.00014532606833557752,
+          "stochRSI": 71.92963606475449,
+          "momentum": 0,
+          "roc": 0,
+          "atr": 0.0024776357930877515,
+          "bbandsB": 72.70179926381722,
+          "cmf": 0.13594469703727877,
+          "obv": -208465643.09999973
+        }
+      },
+      {
+        "combination": "ADX:50|MACD:neg|StochRSI:-30|MOM:0|ROC:0|ATR:50|BBB:-20|CMF:neg|OBV:neg",
+        "effectiveness": 0.6,
+        "total": 5,
+        "effective": 3,
+        "indicators": {
+          "adx": 53.79517624914539,
+          "macd": -0.0007988381313161416,
+          "stochRSI": -20.846108259678935,
+          "momentum": -4.014598540145986,
+          "roc": -4.014598540145985,
+          "atr": 0.0034094578735176604,
+          "bbandsB": -14.338905729702203,
+          "cmf": -0.15622276253441159,
+          "obv": -300267776.99999946
+        }
+      }
+    ],
+    "downward": [
+      {
+        "combination": "ADX:40|MACD:pos|StochRSI:100|MOM:100|ROC:100|ATR:50|BBB:110|CMF:pos|OBV:neg",
+        "effectiveness": 0.8,
+        "total": 5,
+        "effective": 4,
+        "indicators": {
+          "adx": 46.93308826657089,
+          "macd": 0.002022981405169084,
+          "stochRSI": 108.76737121253062,
+          "momentum": 8.166723144696707,
+          "roc": 8.166723144696718,
+          "atr": 0.005247072850379409,
+          "bbandsB": 115.40322873014499,
+          "cmf": 0.3918776611203069,
+          "obv": -57930733.79999981
+        }
+      },
+      {
+        "combination": "ADX:50|MACD:neg|StochRSI:0|MOM:0|ROC:0|ATR:50|BBB:0|CMF:neg|OBV:neg",
+        "effectiveness": 0.6,
+        "total": 5,
+        "effective": 3,
+        "indicators": {
+          "adx": 54.59408158756946,
+          "macd": -0.0008309965163752961,
+          "stochRSI": 1.8719859064048228,
+          "momentum": -2.7593433461404193,
+          "roc": -2.7593433461404184,
+          "atr": 0.0025077794314584314,
+          "bbandsB": 0.7051772574723415,
+          "cmf": -0.1204686205058189,
+          "obv": -64035958.19999999
+        }
+      },
+      {
+        "combination": "ADX:30|MACD:pos|StochRSI:110|MOM:100|ROC:100|ATR:50|BBB:110|CMF:pos|OBV:neg",
+        "effectiveness": 0.6,
+        "total": 5,
+        "effective": 3,
+        "indicators": {
+          "adx": 37.02017493193807,
+          "macd": 0.0014042644259408337,
+          "stochRSI": 115.9293819379589,
+          "momentum": 3.952991452991461,
+          "roc": 3.9529914529914527,
+          "atr": 0.0031364402072090155,
+          "bbandsB": 114.26930682762688,
+          "cmf": 0.20643546853087355,
+          "obv": -79059101.29999988
+        }
+      },
+      {
+        "combination": "ADX:40|MACD:pos|StochRSI:80|MOM:80|ROC:80|ATR:50|BBB:90|CMF:pos|OBV:neg",
+        "effectiveness": 0.6,
+        "total": 5,
+        "effective": 3,
+        "indicators": {
+          "adx": 40.0760800258814,
+          "macd": 0.00042238796198787345,
+          "stochRSI": 87.0717803896143,
+          "momentum": 2.136400986031206,
+          "roc": 2.136400986031217,
+          "atr": 0.0013322255033504267,
+          "bbandsB": 90.27766492955087,
+          "cmf": 0.28718568725074134,
+          "obv": -151200341.99999976
+        }
+      },
+      {
+        "combination": "ADX:40|MACD:pos|StochRSI:70|MOM:100|ROC:100|ATR:50|BBB:90|CMF:pos|OBV:neg",
+        "effectiveness": 0.6,
+        "total": 5,
+        "effective": 3,
+        "indicators": {
+          "adx": 45.19209838256671,
+          "macd": 0.0034989279190800436,
+          "stochRSI": 77.44482454695795,
+          "momentum": 9.501642935377852,
+          "roc": 9.50164293537786,
+          "atr": 0.010415519001952677,
+          "bbandsB": 93.79523135822544,
+          "cmf": 0.15737517363373105,
+          "obv": -163385022.99999982
+        }
+      }
+    ]
+  }
+}

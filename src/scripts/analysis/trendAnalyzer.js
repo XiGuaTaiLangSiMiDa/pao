@@ -12,7 +12,7 @@ async function calculateCurrentIndicators(klines) {
     const highs = klines.map(k => k.high);
     const lows = klines.map(k => k.low);
     const volumes = klines.map(k => k.volume);
-    
+
     // Calculate all indicators
     const adx = calculateADX(highs, lows, prices).slice(-1)[0];
     const macd = calculateMACD(
@@ -89,12 +89,15 @@ function calculatePatternSimilarity(current, pattern) {
 /**
  * Analyze current market conditions
  */
-export async function analyzeTrend(symbal="SOLUSDT") {
+export async function analyzeTrend(symbal = "SOLUSDT") {
     try {
         // Load patterns
         const fs = await import('fs');
+
+        const sf = `models/reversal_combinations_${symbal}.json`;
+        const exists = fs.existsSync(sf);
         const patterns = JSON.parse(
-            fs.readFileSync('models/reversal_combinations.json', 'utf8')
+            fs.readFileSync(exists ? sf : 'models/reversal_combinations.json', 'utf8')
         );
 
         // Get current market data
@@ -105,7 +108,7 @@ export async function analyzeTrend(symbal="SOLUSDT") {
 
         // Calculate current indicators
         const currentIndicators = await calculateCurrentIndicators(klines);
-        
+
         // Compare with upward reversal pattern
         const upwardPattern = patterns.combinations.upward[0].indicators;
         const upwardSimilarity = calculatePatternSimilarity(currentIndicators, {
@@ -165,23 +168,24 @@ export async function analyzeTrend(symbal="SOLUSDT") {
 
 // Only run standalone analysis if script is run directly
 if (process.argv[1].endsWith('trendAnalyzer.js')) {
-    analyzeTrend("SOLUSDT").then(results => {
+    const l3 = process.argv.length == 3;
+    analyzeTrend(l3 ? `${process.argv[2]}USDT` : "SOLUSDT").then(results => {
         console.log('\nCurrent Market Analysis:');
         console.log('=======================');
         console.log(`Current Price: ${results.currentPrice}`);
-        
+
         console.log('\nIndicator Values:');
         console.log('----------------');
         Object.entries(results.indicators).forEach(([indicator, value]) => {
             console.log(`${indicator.toUpperCase()}: ${value.toFixed(4)}`);
         });
-        
+
         console.log('\nReversal Probabilities:');
         console.log('----------------------');
         console.log(`Upward Reversal: ${(results.analysis.upwardReversal.probability * 100).toFixed(2)}%`);
         console.log(` - Pattern Similarity: ${(results.analysis.upwardReversal.similarity * 100).toFixed(2)}%`);
         console.log(` - Base Pattern Accuracy: ${(results.analysis.upwardReversal.baseAccuracy * 100).toFixed(2)}%`);
-        
+
         console.log(`\nDownward Reversal: ${(results.analysis.downwardReversal.probability * 100).toFixed(2)}%`);
         console.log(` - Pattern Similarity: ${(results.analysis.downwardReversal.similarity * 100).toFixed(2)}%`);
         console.log(` - Base Pattern Accuracy: ${(results.analysis.downwardReversal.baseAccuracy * 100).toFixed(2)}%`);
