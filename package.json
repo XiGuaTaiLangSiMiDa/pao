@@ -1,22 +1,3 @@
-{
-  "name": "sol-price-predictor",
-  "version": "1.0.0",
-  "description": "A TensorFlow.js model to predict SOL-USDT price movements",
-  "main": "src/server.js",
-  "type": "module",
-  "scripts": {
-    "start": "node src/server.js",
-    "train": "node src/train.js",
-    "predict": "node src/predict.js",
-    "cache:init": "node src/scripts/initializeCache.js",
-    "cache:update": "node src/scripts/updateCache.js",
-    "analyze:timeframes": "node src/scripts/timeframe_analysis/main.js"
-  },
-  "dependencies": {
-    "@tensorflow/tfjs-node": "^4.17.0",
-    "axios": "^1.6.7",
-    "dotenv": "^16.4.1",
-    "express": "^4.21.1",
-    "moment": "^2.30.1"
-  }
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:490c2dabff718efd6b30f1b3842f8b8de11755fde80f6f4d7c3607dd14d1c8d1
+size 657

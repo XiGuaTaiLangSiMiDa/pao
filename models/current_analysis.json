@@ -1,27 +1,3 @@
-{
-  "timestamp": "2024-11-15T08:41:02.222Z",
-  "currentPrice": 210.54,
-  "indicators": {
-    "adx": 20.195900679884698,
-    "macd": 0.2591376146194005,
-    "stochRSI": 105.23447775372013,
-    "momentum": 0.6597819850831854,
-    "roc": 0.6597819850831877,
-    "obv": 2513265.516999967,
-    "atr": 1.3904671177347017,
-    "bbandsB": 85.33226298372959,
-    "cmf": -0.10896071633741916
-  },
-  "analysis": {
-    "upwardReversal": {
-      "similarity": 0.39367640425445016,
-      "probability": 0.23620584255267008,
-      "baseAccuracy": 0.6
-    },
-    "downwardReversal": {
-      "similarity": 0.8006997016032997,
-      "probability": 0.5337998010688665,
-      "baseAccuracy": 0.6666666666666666
-    }
-  }
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:51e093c54b3d958c183106fcce767c73e3891df2d2718a6d9c0c48f820257abb
+size 702
