@@ -89,7 +89,7 @@ function calculatePatternSimilarity(current, pattern) {
 /**
  * Analyze current market conditions
  */
-export async function analyzeTrend() {
+export async function analyzeTrend(symbal="SOLUSDT") {
     try {
         // Load patterns
         const fs = await import('fs');
@@ -98,7 +98,7 @@ export async function analyzeTrend() {
         );
 
         // Get current market data
-        const klines = await klineCache.update("SOLUSDT");
+        const klines = await klineCache.update(symbal);
         if (!klines || klines.length === 0) {
             throw new Error('No market data available');
         }
@@ -165,7 +165,7 @@ export async function analyzeTrend() {
 
 // Only run standalone analysis if script is run directly
 if (process.argv[1].endsWith('trendAnalyzer.js')) {
-    analyzeTrend().then(results => {
+    analyzeTrend("SOLUSDT").then(results => {
         console.log('\nCurrent Market Analysis:');
         console.log('=======================');
         console.log(`Current Price: ${results.currentPrice}`);
