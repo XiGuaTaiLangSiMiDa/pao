@@ -98,10 +98,12 @@ function analyzeIndicatorCombinations(reversals, klines) {
 
     reversals.forEach(reversal => {
         const indicators = calculateIndicators(klines, reversal.index);
+        console.log(reversal.index);
         if (!indicators) return;
 
         const type = reversal.type;
         const key = generateCombinationKey(indicators);
+        console.log(key);
         
         if (!combinations[type].has(key)) {
             combinations[type].set(key, {
@@ -158,7 +160,7 @@ function normalizeValue(value) {
 /**
  * Find most effective indicator combinations
  */
-function findEffectiveCombinations(combinations, minSamples = 5, minEffectiveness = 0.6) {
+function findEffectiveCombinations(combinations, minSamples = 3, minEffectiveness = 0.6) {
     const results = {
         upward: [],
         downward: []
@@ -217,6 +219,7 @@ async function analyzeReversalCombinations(symbal="SOLUSDT") {
 
         // Analyze combinations
         const combinations = analyzeIndicatorCombinations(reversals, klines);
+        console.log(`Found combinations.downward ${combinations.downward.size} combinations.upward ${combinations.upward.size}`);
         const effectiveCombinations = findEffectiveCombinations(combinations);
 
         // Format results

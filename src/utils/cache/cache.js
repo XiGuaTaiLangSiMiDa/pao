@@ -1,6 +1,7 @@
 import moment from 'moment';
 import { CacheStorage } from './storage.js';
 import { KlineFetcher } from './fetcher.js';
+import { CACHE_CONFIG } from './config.js';
 
 export class KlineCache {
     constructor() {
@@ -51,7 +52,7 @@ export class KlineCache {
         // Otherwise, fetch last year's data
         const startTime = cachedKlines.length > 0 
             ? cachedKlines[cachedKlines.length - 1].openTime
-            : moment().subtract(9, 'year').valueOf();
+            : moment().subtract(CACHE_CONFIG.KLINE_DURATION, 'year').valueOf();
         
         const endTime = moment().valueOf();
 

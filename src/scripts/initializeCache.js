@@ -1,8 +1,9 @@
 import moment from 'moment';
 import { klineCache } from '../utils/cache/cache.js';
+import { CACHE_CONFIG } from '../utils/cache/config.js';
 
 const symbol = 'SOLUSDT';
-const startTime = moment().subtract(9, 'year').valueOf();
+const startTime = moment().subtract(CACHE_CONFIG.KLINE_DURATION, 'year').valueOf();
 const endTime = moment().valueOf();
 
 console.log('Initializing klines cache...');

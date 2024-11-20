@@ -6,6 +6,7 @@ import { TimeframeAnalyzer } from './analyzer.js';
 import { TIMEFRAMES } from './config.js';
 import { klineCache } from '../../utils/cache/cache.js';
 import { CacheStorage } from '../../utils/cache/storage.js';
+import { CACHE_CONFIG } from '../../utils/cache/config.js';
 
 // Get directory name in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -179,7 +180,7 @@ async function main() {
 
   try {
     console.log('Loading historical data...');
-    const startTime = moment().subtract(9, 'year');
+    const startTime = moment().subtract(CACHE_CONFIG.KLINE_DURATION, 'year');
     const endTime = moment();
     
     // First fetch recent data

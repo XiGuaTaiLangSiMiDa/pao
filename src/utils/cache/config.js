@@ -4,5 +4,6 @@ export const CACHE_CONFIG = {
     CHUNK_SIZE: 1000, // Binance's actual limit
     INTERVAL: '15m',
     RETRY_DELAY: 1000,
-    RATE_LIMIT_DELAY: 100
+    RATE_LIMIT_DELAY: 100,
+    KLINE_DURATION: 2 // year
 };
