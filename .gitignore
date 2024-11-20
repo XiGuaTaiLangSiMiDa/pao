@@ -3,6 +3,7 @@ node_modules/
 
 # Model files
 # models/
+cache/
 
 # Environment variables
 .env
