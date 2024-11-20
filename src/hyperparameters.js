@@ -4,7 +4,7 @@ export const HYPERPARAMETERS = {
   featureSize: 22,       // Maintained for current indicators
   
   // Training parameters
-  epochs: 100,
+  epochs: 1,
   validationSplit: 0.2,
   patience: 20,
   

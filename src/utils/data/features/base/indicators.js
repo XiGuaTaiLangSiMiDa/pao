@@ -1,3 +1,5 @@
+import { findMaxInLargeArray } from "../../../array_max.js";
+
 // Calculate RSI with safety checks
 export function calculateRSI(prices, period = 14) {
     const changes = prices.slice(1).map((price, i) => {
@@ -221,8 +223,10 @@ export function calculateOBV(prices, volumes) {
         
         obv.push(currentOBV);
     }
-
-    const maxAbsOBV = Math.max(...obv.map(Math.abs));
+    const aobc = obv.map(Math.abs);
+    console.log(aobc.length);
+    // const maxAbsOBV = Math.max(...aobc);
+    const maxAbsOBV = findMaxInLargeArray(aobc);
     return obv.map(value => maxAbsOBV === 0 ? 0 : (value / maxAbsOBV) * 100);
 }
 

@@ -4,6 +4,7 @@ import {
     generatePredictionData,
     WindowConfig
 } from './data/features/index.js';
+import { klineCache } from './cache/cache.js';
 
 export async function fetchTrainingData({
     symbol = 'SOLUSDT',
@@ -15,6 +16,7 @@ export async function fetchTrainingData({
 }) {
     try {
         console.log('Fetching training data...');
+        /**
         const klines = await fetchKlines({
             symbol,
             interval,
@@ -22,6 +24,8 @@ export async function fetchTrainingData({
             startTime,
             endTime
         });
+         */
+        const klines = await klineCache.update(symbol);
         console.log(`Fetched ${klines.length} klines`);
 
         console.log('Generating training features...');
