@@ -230,6 +230,11 @@ async function analyzeReversalCombinations(symbal="SOLUSDT") {
             combinations: effectiveCombinations
         };
 
+        if(results.combinations.upward.length == 0 && results.combinations.downward.length == 0) {
+            console.log(`\nCombinations is empty! ${results}`);
+            return;
+        }
+
         // Save results
         const fs = await import('fs');
         fs.writeFileSync(
