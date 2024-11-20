@@ -51,7 +51,7 @@ export class KlineCache {
         // Otherwise, fetch last year's data
         const startTime = cachedKlines.length > 0 
             ? cachedKlines[cachedKlines.length - 1].openTime
-            : moment().subtract(1, 'year').valueOf();
+            : moment().subtract(9, 'year').valueOf();
         
         const endTime = moment().valueOf();
 

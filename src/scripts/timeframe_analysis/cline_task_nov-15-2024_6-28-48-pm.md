@@ -2530,7 +2530,7 @@ export class KlineCache {
         // Otherwise, fetch last year's data
         const startTime = cachedKlines.length > 0 
             ? cachedKlines[cachedKlines.length - 1].openTime
-            : moment().subtract(1, 'year').valueOf();
+            : moment().subtract(9, 'year').valueOf();
         
         const endTime = moment().valueOf();
 
@@ -2970,11 +2970,11 @@ export class KlineCache {
 
         // If cache is empty or has only recent data, fetch full year
         if (cachedKlines.length <= 1) {
-            startTime = moment().subtract(1, 'year').valueOf();
+            startTime = moment().subtract(9, 'year').valueOf();
             newKlines = await this.fetcher.fetchKlinesInChunks(symbol, startTime, endTime);
         } else {
             // Update missing historical data if needed
-            const historicalStartTime = moment().subtract(1, 'year').valueOf();
+            const historicalStartTime = moment().subtract(9, 'year').valueOf();
             const cachedStartTime = cachedKlines[0].openTime;
             
             if (cachedStartTime > historicalStartTime) {
@@ -4049,7 +4049,7 @@ async function main() {
 
   try {
     console.log('Loading historical data...');
-    const startTime = moment().subtract(1, 'year');
+    const startTime = moment().subtract(9, 'year');
     const endTime = moment();
     
     // First fetch recent data
@@ -8398,7 +8398,7 @@ async function main() {
 
   try {
     console.log('Loading historical data...');
-    const startTime = moment().subtract(1, 'year');
+    const startTime = moment().subtract(9, 'year');
     const endTime = moment();
     
     // First fetch recent data

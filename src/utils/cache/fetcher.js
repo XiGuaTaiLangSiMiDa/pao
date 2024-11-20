@@ -19,7 +19,11 @@ export class KlineFetcher {
                     )
                 });
 
-                if (klines.length === 0) break;
+                if (klines.length === 0) {
+                    currentStartTime += CACHE_CONFIG.CHUNK_SIZE * 15 * 60 * 1000;
+                    console.log(new Date(currentStartTime));
+                    continue;
+                }
 
                 allKlines.push(...klines);
                 

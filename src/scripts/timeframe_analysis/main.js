@@ -179,7 +179,7 @@ async function main() {
 
   try {
     console.log('Loading historical data...');
-    const startTime = moment().subtract(1, 'year');
+    const startTime = moment().subtract(9, 'year');
     const endTime = moment();
     
     // First fetch recent data

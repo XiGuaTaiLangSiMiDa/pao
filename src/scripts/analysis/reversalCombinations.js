@@ -231,7 +231,7 @@ async function analyzeReversalCombinations(symbal="SOLUSDT") {
         };
 
         if(results.combinations.upward.length == 0 && results.combinations.downward.length == 0) {
-            console.log(`\nCombinations is empty! ${results}`);
+            console.log(`\nCombinations is empty! ${JSON.stringify(results)}`);
             return;
         }
 
