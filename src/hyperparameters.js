@@ -4,9 +4,9 @@ export const HYPERPARAMETERS = {
   featureSize: 22,       // Maintained for current indicators
   
   // Training parameters
-  epochs: 1,
+  epochs: 50,
   validationSplit: 0.2,
-  patience: 20,
+  patience: 15,
   
   // Search spaces for hyperparameters
   searchSpace: {
